@@ -16,6 +16,9 @@ public class Enemy
     public Color color;
 
     public Rectangle rectangle;
+
+    int levelGridWidth = 19;
+    int levelGridHeight = 13;
     public Enemy(Form1 form, int i, int x, int y, int spd, int hth, int rew, Color clr)
     {
         // Initializing enemy values

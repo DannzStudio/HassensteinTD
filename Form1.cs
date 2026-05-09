@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace HassensteinTD
 {
@@ -14,6 +15,7 @@ namespace HassensteinTD
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
+            renderLevel(g);
             renderEnemies(g);
             renderDragAndDrop(g);
         }
@@ -26,17 +28,146 @@ namespace HassensteinTD
         private void Form1_Load(object sender, EventArgs e)
         {
             init();
+            loadLevel("Levels/level1.json");
         }
 
         Font arialFont = new Font("Arial", 14, FontStyle.Bold);
+
+        private void init()
+        {
+            int canvasWidth = 950;
+            int itemWidth = 100;
+            int itemCount = 4;
+            int yPos = 650;
+
+            // UI tower buttons
+            int gap = (canvasWidth - (itemCount * itemWidth)) / (itemCount + 1); // Calculate gap based on canvas width, item count and item width
+
+            archerUIRec = new Rectangle(gap, yPos, itemWidth, itemWidth);
+            hedgehogUIRec = new Rectangle(gap * 2 + itemWidth, yPos, itemWidth, itemWidth);
+            trapperUIRec = new Rectangle(gap * 3 + itemWidth * 2, yPos, itemWidth, itemWidth);
+            bomberUIRec = new Rectangle(gap * 4 + itemWidth * 3, yPos, itemWidth, itemWidth);
+
+            // Level manager
+            levelManager = new LevelManager(this);
+        }
+
+        //------------------------------- Level Manager ----------------------------
+
+        LevelManager levelManager;
+        LevelManager.LevelData currentLevelData;
+
+        int gridSize = 50;
+
+        bool levelLoaded = false;
+        private void loadLevel(string filePath)
+        {  
+            levelManager.LoadLevel(filePath);
+            currentLevelData = levelManager.CurrentLevel;
+            if (currentLevelData != null)
+            {
+                preRenderLevelMap();
+                levelLoaded = true;
+            }
+        }
+
+        class Tile
+        {
+            public int gridX;
+            public int gridY;
+            public bool isPath;
+            public bool isBuildable;
+            public bool isEnd;
+
+            public Tile(int x, int y, bool path, bool buildable, bool end) // Constructor
+            {
+                gridX = x;
+                gridY = y;
+                isPath = path;
+                isBuildable = buildable;
+                isEnd = end;
+            }
+        }
+
+        Tile[,] logicalMap; // 2D array representing the level layout for pathfinding and tower placement logic
+
+        Bitmap mapImage;
+        private void preRenderLevelMap()
+        {
+            if (mapImage != null) // Memory leak prevention
+            {
+                mapImage.Dispose();
+                mapImage = null;
+            }
+
+            string[] layout = levelManager.CurrentLevel.levelLayout;
+
+            int width = 19;
+            int height = 13;
+
+            mapImage = new Bitmap(width * gridSize, height * gridSize);
+            logicalMap = new Tile[width, height];
+
+            using (Graphics g = Graphics.FromImage(mapImage)) // Drawing the level map to bitmap
+            {
+                using (Brush grassBrush = new SolidBrush(Color.LightGreen)) // memory leak prevention
+                using (Brush pathBrush = new SolidBrush(Color.SandyBrown))
+                using (Brush endBrush = new SolidBrush(Color.DarkGray))
+                {
+                    for (int y = 0; y < height; y++) // Pre-rendering map image for better performance
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            char tile = layout[y][x];
+                            Rectangle rect = new Rectangle(x * gridSize, y * gridSize, gridSize, gridSize);
+
+                            bool isPath = false;
+                            bool isBuildable = false;
+                            bool isEnd = false;
+
+                            if (tile == '.')
+                            {
+                                g.FillRectangle(grassBrush, rect); // Grass
+                                isBuildable = true;
+                            }
+                            else if (tile == '#')
+                            {
+                                g.FillRectangle(pathBrush, rect); // Path
+                                isPath = true;
+                            }
+                            else if (tile == '*')
+                            {
+                                g.FillRectangle(endBrush, rect); // End
+                                isPath = true;
+                                isEnd = true;
+                            }
+
+                            logicalMap[x, y] = new Tile(x, y, isPath, isBuildable, isEnd);
+                        }    
+                    }
+                }
+            }
+        }
+
+        
+
+        private void renderLevel(Graphics g)
+        {
+            if (!levelLoaded) return;
+            g.DrawImage(mapImage, 0, 0);
+        }
+
+        private void startWave()
+        {
+
+        }
 
         //------------------------------- Enemy Logic ------------------------------
 
         public List<Enemy> enemies = new List<Enemy>();
 
-        public int enemyCount = 0; // For enemy ID
+        public int enemyNextID = 0;
 
-        
 
         private void enemyUpdate_Tick(object sender, EventArgs e)
         {
@@ -44,6 +175,8 @@ namespace HassensteinTD
             {
                 enemy.move(this);
             }
+
+            enemies.RemoveAll(enemy => enemy.health <= 0);
         }
 
         private void renderEnemies(Graphics g)
@@ -63,8 +196,12 @@ namespace HassensteinTD
         {
             if (e.KeyCode == Keys.Space)
             {
-                enemies.Add(new Enemy(this, enemyCount, 0, 0, 50, 10, 100, Color.Green));
-                enemyCount++;
+                enemies.Add(new Enemy(this, enemyNextID, 0, 0, 50, 10, 100, Color.Green));
+                enemyNextID++;
+            }
+            else if (e.KeyCode == Keys.L) // Debug: Load level on L press
+            {
+
             }
         }
 
@@ -91,25 +228,7 @@ namespace HassensteinTD
 
         bool isDragging = false;
         int draggingID = 0; // 1-Archer , 2-Hedgehog, 3-Trapper, 4-Bomber
-        int gridSize = 50;
-
-        
-
-        private void init()
-        {
-            int canvasWidth = 950;
-            int itemWidth = 100;
-            int itemCount = 4;
-            int yPos = 650;
-
-            // UI tower buttons
-            int gap = (canvasWidth - (itemCount * itemWidth)) / (itemCount + 1); // Calculate gap based on canvas width, item count and item width
-
-            archerUIRec = new Rectangle(gap, yPos, itemWidth, itemWidth);
-            hedgehogUIRec = new Rectangle(gap * 2 + itemWidth, yPos, itemWidth, itemWidth);
-            trapperUIRec = new Rectangle(gap * 3 + itemWidth * 2, yPos, itemWidth, itemWidth);
-            bomberUIRec = new Rectangle(gap * 4 + itemWidth * 3, yPos, itemWidth, itemWidth);
-        }
+         
 
         private void renderDragAndDrop(Graphics g)
         {
@@ -215,6 +334,9 @@ namespace HassensteinTD
             int cursorX = e.X;
             int cursorY = e.Y;
 
+            int gridX = cursorX / gridSize; // Calculate grid coordinatesy
+            int gridY = cursorY / gridSize;
+
             // Snap to closest grid
             towerRec.X = (int)(Math.Round((float)towerRec.X / gridSize) * gridSize);
             towerRec.Y = (int)(Math.Round((float)towerRec.Y / gridSize) * gridSize);
@@ -225,34 +347,7 @@ namespace HassensteinTD
 
                 // Checking for existing towers and not allowing overplacement (intersection of rectangles)
 
-                foreach (Archer a in archers)
-                {
-                    if (towerRec.IntersectsWith(a.rectangle)) { intersects = true; break; }
-                }
-
-                if (!intersects)
-                {
-                    foreach (Hedgehog h in hedgehogs)
-                    {
-                        if (towerRec.IntersectsWith(h.rectangle)) { intersects = true; break; }
-                    }
-                }
-
-                if (!intersects)
-                {
-                    foreach (Trapper t in trappers)
-                    {
-                        if (towerRec.IntersectsWith(t.rectangle)) { intersects = true; break; }
-                    }
-                }
-
-                if (!intersects)
-                {
-                    foreach (Bomber b in bombers)
-                    {
-                        if (towerRec.IntersectsWith(b.rectangle)) { intersects = true; break; }
-                    }
-                }
+                intersects = !logicalMap[gridX, gridY].isBuildable;
 
                 // Build tower
                 if (!intersects)
@@ -261,15 +356,19 @@ namespace HassensteinTD
                     {
                         case 1:
                             archers.Add(new Archer(this, archerCount++, towerRec.X, towerRec.Y));
+                            logicalMap[gridX, gridY].isBuildable = false;
                             break;
                         case 2:
                             hedgehogs.Add(new Hedgehog(this, hedgehogCount++, towerRec.X, towerRec.Y));
+                            logicalMap[gridX, gridY].isBuildable = false;
                             break;
                         case 3:
                             trappers.Add(new Trapper(this, trapperCount++, towerRec.X, towerRec.Y));
+                            logicalMap[gridX, gridY].isBuildable = false;
                             break;
                         case 4:
                             bombers.Add(new Bomber(this, bomberCount++, towerRec.X, towerRec.Y));
+                            logicalMap[gridX, gridY].isBuildable = false;
                             break;
                     }
                 }
