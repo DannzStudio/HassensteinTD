@@ -22,6 +22,8 @@ namespace HassensteinTD
 
         private void mainUpdate_Tick(object sender, EventArgs e)
         {
+            enemies.RemoveAll(enemy => enemy.health <= 0); // Removes all enemies with health <= 0 from the list (killed enemies)
+            waveCounterL.Text = $"{currentWave}/{numberOfWaves}";
             mainDisplay.Refresh();
         }
 
@@ -36,17 +38,17 @@ namespace HassensteinTD
         private void init()
         {
             int canvasWidth = 950;
-            int itemWidth = 100;
-            int itemCount = 4;
+            int buttonWidth = 100;
+            int buttonCount = 4;
             int yPos = 650;
 
             // UI tower buttons
-            int gap = (canvasWidth - (itemCount * itemWidth)) / (itemCount + 1); // Calculate gap based on canvas width, item count and item width
+            int gap = (canvasWidth - (buttonCount * buttonWidth)) / (buttonCount + 1); // Calculate gap based on canvas width, button count and button width
 
-            archerUIRec = new Rectangle(gap, yPos, itemWidth, itemWidth);
-            hedgehogUIRec = new Rectangle(gap * 2 + itemWidth, yPos, itemWidth, itemWidth);
-            trapperUIRec = new Rectangle(gap * 3 + itemWidth * 2, yPos, itemWidth, itemWidth);
-            bomberUIRec = new Rectangle(gap * 4 + itemWidth * 3, yPos, itemWidth, itemWidth);
+            archerUIRec = new Rectangle(gap, yPos, buttonWidth, buttonWidth);
+            hedgehogUIRec = new Rectangle(gap * 2 + buttonWidth, yPos, buttonWidth, buttonWidth);
+            trapperUIRec = new Rectangle(gap * 3 + buttonWidth * 2, yPos, buttonWidth, buttonWidth);
+            bomberUIRec = new Rectangle(gap * 4 + buttonWidth * 3, yPos, buttonWidth, buttonWidth);
 
             // Level manager
             levelManager = new LevelManager(this);
@@ -60,10 +62,15 @@ namespace HassensteinTD
         int gridSize = 50;
 
         bool levelLoaded = false;
+
+        int numberOfWaves = 0;
+        int currentWave;
         private void loadLevel(string filePath)
         {  
             levelManager.LoadLevel(filePath);
             currentLevelData = levelManager.CurrentLevel;
+            numberOfWaves = currentLevelData.Waves.Count;
+            currentWave = 0;
             if (currentLevelData != null)
             {
                 preRenderLevelMap();
@@ -121,6 +128,7 @@ namespace HassensteinTD
                             char tile = layout[y][x];
                             Rectangle rect = new Rectangle(x * gridSize, y * gridSize, gridSize, gridSize);
 
+                            // Logical map
                             bool isPath = false;
                             bool isBuildable = false;
                             bool isEnd = false;
@@ -147,9 +155,7 @@ namespace HassensteinTD
                     }
                 }
             }
-        }
-
-        
+        } 
 
         private void renderLevel(Graphics g)
         {
@@ -157,9 +163,58 @@ namespace HassensteinTD
             g.DrawImage(mapImage, 0, 0);
         }
 
-        private void startWave()
-        {
+        //------------------------------- Wave Logic ------------------------------
 
+        Queue<EnemyInQueueData> enemyQueue;
+        bool waveInProgress = false;
+        bool waveSpawning = false;
+        int numberOfEnemiesInCurrentWave = 0;
+
+        class EnemyInQueueData // For transfering enemy data from level manager for spawning;
+        {
+            public int id;
+            public int enemyQueueX;
+            public int enemyQueueY;
+            public int speed;
+            public int health;
+            public int reward;
+            public Color color;
+            public EnemyInQueueData(int i, int x, int y, int spd, int hth, int rew, Color clr)
+            {
+                id = i;
+                enemyQueueX = x;
+                enemyQueueY = y;
+                speed = spd;
+                health = hth;
+                reward = rew;
+                color = clr;
+            }
+        }
+
+        private void startWave(int waveIndex)
+        {
+            // Initializing variables
+            int waveReward = currentLevelData.Waves[waveIndex].waveReward;
+            int startX = currentLevelData.startPosX;
+            int startY = currentLevelData.startPosY;
+
+            numberOfEnemiesInCurrentWave = currentLevelData.Waves[waveIndex].Enemies.Count;
+
+            List<LevelManager.EnemyData> enemyDatas = currentLevelData.Waves[waveIndex].Enemies;
+            enemyQueue = new Queue<EnemyInQueueData>();
+
+            waveInProgress = true;
+            
+            for (int i = 0; i < enemyDatas.Count; i++) // Filling enemy queue
+            {
+                for(int j = 0; j < enemyDatas[i].numberOfTheseEnemies; j++)
+                {
+                    enemyQueue.Enqueue(new EnemyInQueueData(enemyNextID, startX, startY, enemyDatas[i].speed, enemyDatas[i].health, enemyDatas[i].reward, enemyDatas[i].color));
+                    enemyNextID++;
+                }   
+            }
+            waveSpawning = true;
+            currentWave++;
         }
 
         //------------------------------- Enemy Logic ------------------------------
@@ -176,7 +231,13 @@ namespace HassensteinTD
                 enemy.move(this);
             }
 
-            enemies.RemoveAll(enemy => enemy.health <= 0);
+            // Spawning enemies from queue
+            if(waveSpawning && enemyQueue.Count > 0)
+            {
+                EnemyInQueueData data = enemyQueue.Dequeue();
+                enemies.Add(new Enemy(this, data.id, data.enemyQueueX, data.enemyQueueY, data.speed, data.health, data.reward, data.color));
+            }
+            if(enemyQueue != null)waveSpawning = enemyQueue.Count > 0;
         }
 
         private void renderEnemies(Graphics g)
@@ -201,7 +262,7 @@ namespace HassensteinTD
             }
             else if (e.KeyCode == Keys.L) // Debug: Load level on L press
             {
-
+                if(currentWave != numberOfWaves)startWave(currentWave);
             }
         }
 

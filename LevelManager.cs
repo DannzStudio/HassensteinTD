@@ -24,13 +24,15 @@ public class LevelManager
     {
         public int startingGold { get; set; }
         public string[] levelLayout { get; set; }
+        public int startPosX { get; set; }
+        public int startPosY { get; set; }
         public List<WaveData> Waves { get; set; }
     }
 
     public class WaveData
     {
         public List<EnemyData> Enemies { get; set; }
-        public int waveReward { get; set; }
+        public int waveReward { get; set; }  
     }
 
     public class EnemyData
