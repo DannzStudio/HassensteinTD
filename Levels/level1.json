@@ -34,7 +34,7 @@
       "waveReward": 100,
       "Enemies": [
         {
-          "numberOfTheseEnemies": 1,
+          "numberOfTheseEnemies": 2,
           "speed": 50,
           "health": 10,
           "reward": 500,

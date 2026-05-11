@@ -57,7 +57,7 @@ namespace HassensteinTD
         //------------------------------- Level Manager ----------------------------
 
         LevelManager levelManager;
-        LevelManager.LevelData currentLevelData;
+        public LevelManager.LevelData currentLevelData;
 
         int gridSize = 50;
 
@@ -78,7 +78,7 @@ namespace HassensteinTD
             }
         }
 
-        class Tile
+        public class Tile
         {
             public int gridX;
             public int gridY;
@@ -96,7 +96,7 @@ namespace HassensteinTD
             }
         }
 
-        Tile[,] logicalMap; // 2D array representing the level layout for pathfinding and tower placement logic
+        public Tile[,] logicalMap; // 2D array representing the level layout for pathfinding and tower placement logic
 
         Bitmap mapImage;
         private void preRenderLevelMap()
