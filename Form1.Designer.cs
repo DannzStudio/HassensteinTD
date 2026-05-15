@@ -75,11 +75,11 @@
             // 
             moneyLabel.AutoSize = true;
             moneyLabel.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 238);
-            moneyLabel.Location = new Point(716, 18);
+            moneyLabel.Location = new Point(734, 18);
             moneyLabel.Name = "moneyLabel";
-            moneyLabel.Size = new Size(74, 25);
+            moneyLabel.Size = new Size(56, 25);
             moneyLabel.TabIndex = 3;
-            moneyLabel.Text = "Money:";
+            moneyLabel.Text = "Gold:";
             // 
             // moneyCounterL
             // 
