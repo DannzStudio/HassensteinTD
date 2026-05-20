@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 
 // Shoots around itself in a circle, damaging all enemies in range at once.
-// has a short range and medium damage, but a very fast attack speed.
+// has a short range and medium damage, but a very fast attack speed (300).
 public class Hedgehog
 {
     public Rectangle rectangle;

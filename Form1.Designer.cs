@@ -36,6 +36,8 @@
             moneyCounterL = new Label();
             mainUpdate = new System.Windows.Forms.Timer(components);
             enemyUpdate = new System.Windows.Forms.Timer(components);
+            archerUpdate = new System.Windows.Forms.Timer(components);
+            arrowUpdate = new System.Windows.Forms.Timer(components);
             ((System.ComponentModel.ISupportInitialize)mainDisplay).BeginInit();
             SuspendLayout();
             // 
@@ -103,6 +105,17 @@
             enemyUpdate.Interval = 1000;
             enemyUpdate.Tick += enemyUpdate_Tick;
             // 
+            // archerUpdate
+            // 
+            archerUpdate.Enabled = true;
+            archerUpdate.Interval = 1000;
+            archerUpdate.Tick += archerUpdate_Tick;
+            // 
+            // arrowUpdate
+            // 
+            arrowUpdate.Enabled = true;
+            arrowUpdate.Tick += arrowUpdate_Tick;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -135,5 +148,7 @@
         private Label moneyCounterL;
         private System.Windows.Forms.Timer mainUpdate;
         private System.Windows.Forms.Timer enemyUpdate;
+        private System.Windows.Forms.Timer archerUpdate;
+        private System.Windows.Forms.Timer arrowUpdate;
     }
 }

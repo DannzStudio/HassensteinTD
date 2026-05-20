@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.IO;
+using System.Windows.Forms;
 
 namespace HassensteinTD
 {
@@ -18,6 +19,7 @@ namespace HassensteinTD
             renderLevel(g);
             renderEnemies(g);
             renderDragAndDrop(g);
+            renderArrows(g);
         }
 
         private void mainUpdate_Tick(object sender, EventArgs e)
@@ -66,7 +68,7 @@ namespace HassensteinTD
         int numberOfWaves = 0;
         int currentWave;
         private void loadLevel(string filePath)
-        {  
+        {
             levelManager.LoadLevel(filePath);
             currentLevelData = levelManager.CurrentLevel;
             numberOfWaves = currentLevelData.Waves.Count;
@@ -99,6 +101,9 @@ namespace HassensteinTD
         public Tile[,] logicalMap; // 2D array representing the level layout for pathfinding and tower placement logic
 
         Bitmap mapImage;
+
+        
+
         private void preRenderLevelMap()
         {
             if (mapImage != null) // Memory leak prevention
@@ -151,11 +156,83 @@ namespace HassensteinTD
                             }
 
                             logicalMap[x, y] = new Tile(x, y, isPath, isBuildable, isEnd);
-                        }    
+                        }
                     }
                 }
             }
-        } 
+            generateEnemyMoveSet();
+        }
+
+        public List<int> moveSet; // 1-→ | 2-↓ | 3-← | 4-↑
+        private void generateEnemyMoveSet() //Pathfinding algorithm
+        {
+            moveSet = new List<int>();
+
+            int currentX = currentLevelData.startPosX;
+            int currentY = currentLevelData.startPosY;
+
+            int lastX = -1;
+            int lastY = -1;
+
+            int wth = logicalMap.GetLength(0);
+            int hght = logicalMap.GetLength(1);
+
+            while (true)
+            {
+                // break if enemy is on end point
+                if (logicalMap[currentX, currentY].isEnd)
+                {
+                    break;
+                }
+
+                int nextX = -1;
+                int nextY = -1;
+                int direction = -1;
+
+                // Right
+                if (currentX + 1 < wth && logicalMap[currentX + 1, currentY].isPath && (currentX + 1 != lastX || currentY != lastY))
+                {
+                    nextX = currentX + 1;
+                    nextY = currentY;
+                    direction = 1;
+                }
+                // Down
+                else if (currentY + 1 < hght && logicalMap[currentX, currentY + 1].isPath && (currentX != lastX || currentY + 1 != lastY))
+                {
+                    nextX = currentX;
+                    nextY = currentY + 1;
+                    direction = 2;
+                }
+                // Left
+                else if (currentX - 1 >= 0 && logicalMap[currentX - 1, currentY].isPath && (currentX - 1 != lastX || currentY != lastY))
+                {
+                    nextX = currentX - 1;
+                    nextY = currentY;
+                    direction = 3;
+                }
+                // Up
+                else if (currentY - 1 >= 0 && logicalMap[currentX, currentY - 1].isPath && (currentX != lastX || currentY - 1 != lastY))
+                {
+                    nextX = currentX;
+                    nextY = currentY - 1;
+                    direction = 4;
+                }
+
+                // if nothing is found
+                if (direction == -1)
+                {
+                    break;
+                }
+
+                moveSet.Add(direction);
+
+                // Move to next path
+                lastX = currentX;
+                lastY = currentY;
+                currentX = nextX;
+                currentY = nextY;
+            }
+        }
 
         private void renderLevel(Graphics g)
         {
@@ -204,16 +281,17 @@ namespace HassensteinTD
             enemyQueue = new Queue<EnemyInQueueData>();
 
             waveInProgress = true;
-            
+
             for (int i = 0; i < enemyDatas.Count; i++) // Filling enemy queue
             {
-                for(int j = 0; j < enemyDatas[i].numberOfTheseEnemies; j++)
+                for (int j = 0; j < enemyDatas[i].numberOfTheseEnemies; j++)
                 {
                     enemyQueue.Enqueue(new EnemyInQueueData(enemyNextID, startX, startY, enemyDatas[i].speed, enemyDatas[i].health, enemyDatas[i].reward, enemyDatas[i].color));
                     enemyNextID++;
-                }   
+                }
             }
             waveSpawning = true;
+            waveInProgress = true;
             currentWave++;
         }
 
@@ -232,12 +310,12 @@ namespace HassensteinTD
             }
 
             // Spawning enemies from queue
-            if(waveSpawning && enemyQueue.Count > 0)
+            if (waveSpawning && enemyQueue.Count > 0)
             {
                 EnemyInQueueData data = enemyQueue.Dequeue();
                 enemies.Add(new Enemy(this, data.id, data.enemyQueueX, data.enemyQueueY, data.speed, data.health, data.reward, data.color));
             }
-            if(enemyQueue != null)waveSpawning = enemyQueue.Count > 0;
+            if (enemyQueue != null) waveSpawning = enemyQueue.Count > 0;
         }
 
         private void renderEnemies(Graphics g)
@@ -250,7 +328,7 @@ namespace HassensteinTD
                 }
 
                 // Debug
-                g.DrawString(enemy.id.ToString(), arialFont, new SolidBrush(Color.White), enemy.rectangle.X, enemy.rectangle.Y);
+                g.DrawString(enemy.id.ToString(), arialFont, Brushes.White, enemy.rectangle.X, enemy.rectangle.Y);
             }
         }
         private void Form1_KeyDown(object sender, KeyEventArgs e) // Debug: Spawn enemy on spacebar press
@@ -262,7 +340,7 @@ namespace HassensteinTD
             }
             else if (e.KeyCode == Keys.L) // Debug: Load level on L press
             {
-                if(currentWave != numberOfWaves)startWave(currentWave);
+                if (currentWave != numberOfWaves) startWave(currentWave);
             }
         }
 
@@ -289,36 +367,37 @@ namespace HassensteinTD
 
         bool isDragging = false;
         int draggingID = 0; // 1-Archer , 2-Hedgehog, 3-Trapper, 4-Bomber
-         
+
 
         private void renderDragAndDrop(Graphics g)
         {
             g.FillRectangle(towerBrush, archerUIRec);
-            g.DrawString("Archer", arialFont, new SolidBrush(Color.White), archerUIRec.X, archerUIRec.Y + 50);
+            g.DrawString("Archer", arialFont, Brushes.White, archerUIRec.X, archerUIRec.Y + 50);
             g.FillRectangle(towerBrush, hedgehogUIRec);
-            g.DrawString("Hedgehog", arialFont, new SolidBrush(Color.White), hedgehogUIRec.X, archerUIRec.Y + 50);
+            g.DrawString("Hedgehog", arialFont, Brushes.White, hedgehogUIRec.X, archerUIRec.Y + 50);
             g.FillRectangle(towerBrush, trapperUIRec);
-            g.DrawString("Trapper", arialFont, new SolidBrush(Color.White), trapperUIRec.X, archerUIRec.Y + 50);
+            g.DrawString("Trapper", arialFont, Brushes.White, trapperUIRec.X, archerUIRec.Y + 50);
             g.FillRectangle(towerBrush, bomberUIRec);
-            g.DrawString("Bomber", arialFont, new SolidBrush(Color.White), bomberUIRec.X, archerUIRec.Y + 50);
+            g.DrawString("Bomber", arialFont, Brushes.White, bomberUIRec.X, archerUIRec.Y + 50);
 
-            
+
             // Drawing towers
             foreach (Archer archer in archers)
             {
-                g.FillRectangle(new SolidBrush(Color.Brown), archer.rectangle);
+                g.FillRectangle(Brushes.Brown, archer.rectangle);
+                g.DrawString(archer.nearestEnemyID.ToString(), arialFont, Brushes.White, archer.rectangle.X, archer.rectangle.Y);
             }
             foreach (Hedgehog hedgehog in hedgehogs)
             {
-                 g.FillRectangle(new SolidBrush(Color.Gray), hedgehog.rectangle);
+                g.FillRectangle(Brushes.Gray, hedgehog.rectangle);
             }
             foreach (Trapper trapper in trappers)
             {
-                 g.FillRectangle(new SolidBrush(Color.Purple), trapper.rectangle);
+                g.FillRectangle(Brushes.Purple, trapper.rectangle);
             }
             foreach (Bomber bomber in bombers)
             {
-                 g.FillRectangle(new SolidBrush(Color.Orange), bomber.rectangle);
+                g.FillRectangle(Brushes.Orange, bomber.rectangle);
             }
 
             // Drawing dragging
@@ -328,15 +407,16 @@ namespace HassensteinTD
 
         private void mainDisplay_MouseDown(object sender, MouseEventArgs e)
         {
+            if(waveInProgress) return; // Disable tower placement during waves
             // Relative cursor position to mainDisplay
             int cursorX = e.X;
             int cursorY = e.Y;
 
-            // TOWER VARIANT SELECTION
+            // Tower variant selection
 
             if (e.Button == MouseButtons.Left)
             {
-                if(archerUIRec.Contains(cursorX, cursorY)) // Check if tower rectangle is clicked
+                if (archerUIRec.Contains(cursorX, cursorY)) // Check if tower rectangle is clicked
                 {
                     isDragging = true;
                     towerRec = new Rectangle(cursorX - towerRec.Width / 2, cursorY - towerRec.Height / 2, 50, 50); // Set towerRec to the clicked tower's position
@@ -374,12 +454,13 @@ namespace HassensteinTD
 
         private void mainDisplay_MouseMove(object sender, MouseEventArgs e)
         {
+            if (waveInProgress) return;
             int cursorX = e.X;
             int cursorY = e.Y;
-            
+
             // Moving dragged tower
-            if(isDragging)
-            {              
+            if (isDragging)
+            {
                 towerRec.X = cursorX - towerRec.Width / 2; // Center the rectangle on the cursor
                 towerRec.X = Math.Clamp(towerRec.X, 0, mainDisplay.Width - towerRec.Width); // Prevent moving outside the display
                 towerRec.Y = cursorY - towerRec.Height / 2;
@@ -390,6 +471,7 @@ namespace HassensteinTD
 
         private void mainDisplay_MouseUp(object sender, MouseEventArgs e)
         {
+            if (waveInProgress) return;
             isDragging = false;
 
             int cursorX = e.X;
@@ -438,6 +520,58 @@ namespace HassensteinTD
             // Reseting values
             isDragging = false;
             draggingID = 0;
+        }
+
+        //------------------------------- Tower Logic ------------------------------
+
+        private void renderArrows(Graphics g)
+        {
+            foreach (Arrow arrow in arrows)
+            {
+                g.FillEllipse(Brushes.Black, arrow.rectangle);
+            }
+        }
+
+        public class Arrow
+        {
+            public Rectangle rectangle;
+            public int damage;
+            public int speedX;
+            public int speedY;
+            public Arrow(int x, int y, int damage, int speedX, int speedY)
+            {
+                rectangle = new Rectangle(x, y, 10, 10);
+                this.damage = damage;
+                this.speedX = speedX;
+                this.speedY = speedY;
+            }
+        }
+
+        public List<Arrow> arrows = new List<Arrow>();
+
+        private void archerUpdate_Tick(object sender, EventArgs e)
+        {
+            if (!waveInProgress) return;
+            foreach (Archer archer in archers)
+            {
+                archer.archerAttack(this);
+            }
+        }
+
+        private void arrowUpdate_Tick(object sender, EventArgs e)
+        {
+            if (!waveInProgress) return;
+            for (int i = arrows.Count - 1; i >= 0; i--)
+            {
+                Arrow arrow = arrows[i];
+                arrow.rectangle.Offset(arrow.speedX, arrow.speedY);
+
+                // If arrow is out of boids, remove it
+                if (arrow.rectangle.X > 1000 || arrow.rectangle.X < -10 || arrow.rectangle.Y > 800 || arrow.rectangle.Y < -10)
+                {
+                    arrows.RemoveAt(i);
+                }
+            }
         }
     }
 }

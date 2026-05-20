@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 
 // Shoots bombs at nearest enemies
-// has a long range and high damage with splash damage, but a slow attack speed.
+// has a long range and high damage with splash damage, but a slow attack speed (1500).
 public class Bomber
 {
     public Rectangle rectangle;

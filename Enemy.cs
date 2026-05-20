@@ -19,7 +19,9 @@ public class Enemy
 
     int levelStartX;
     int levelStartY;
-    public Enemy(Form1 form, int i, int x, int y, int spd, int hth, int rew, Color clr)
+
+    Queue<int> moveSet = new Queue<int>();
+    public Enemy(Form1 form, int i, int x, int y, int spd, int hth, int rew, Color clr )
     {
         // Initializing enemy values
 
@@ -34,80 +36,17 @@ public class Enemy
         levelStartX = form.currentLevelData.startPosX;
         levelStartY = form.currentLevelData.startPosY;
 
-        generateMoveSet(form);
+        getMoveSet(form);
     }
 
-    Queue<int> moveSet; // 1-→ | 2-↓ | 3-← | 4-↑
-
-    void generateMoveSet(Form1 form) // Get surround paths to get next dir, also check for last cords so the enemies dont go backwards
+    private void getMoveSet(Form1 form) // Convert move set list in form into queue
     {
-        moveSet = new Queue<int>();
-
-        int currentX = levelStartX;
-        int currentY = levelStartY;
-
-        int lastX = -1;
-        int lastY = -1;
-
-        int width = form.logicalMap.GetLength(0);
-        int height = form.logicalMap.GetLength(1);
-
-        while (true)
+        foreach(int dir in form.moveSet)
         {
-            //break if enemy is on end point
-            if (form.logicalMap[currentX, currentY].isEnd)
-            {
-                break;
-            }
-
-            int nextX = -1;
-            int nextY = -1;
-            int direction = -1;
-
-            // Right
-            if (currentX + 1 < width && form.logicalMap[currentX + 1, currentY].isPath && (currentX + 1 != lastX || currentY != lastY))
-            {
-                nextX = currentX + 1;
-                nextY = currentY;
-                direction = 1;
-            }
-            // Down
-            else if (currentY + 1 < height && form.logicalMap[currentX, currentY + 1].isPath && (currentX != lastX || currentY + 1 != lastY))
-            {
-                nextX = currentX;
-                nextY = currentY + 1;
-                direction = 2;
-            }
-            // Left
-            else if (currentX - 1 >= 0 && form.logicalMap[currentX - 1, currentY].isPath && (currentX - 1 != lastX || currentY != lastY))
-            {
-                nextX = currentX - 1;
-                nextY = currentY;
-                direction = 3;
-            }
-            // Up
-            else if (currentY - 1 >= 0 && form.logicalMap[currentX, currentY - 1].isPath && (currentX != lastX || currentY - 1 != lastY))
-            {
-                nextX = currentX;
-                nextY = currentY - 1;
-                direction = 4;
-            }
-
-            // if nothing is find break the loop
-            if (direction == -1)
-            {
-                break;
-            }
-
-            moveSet.Enqueue(direction);
-
-            // Move to next path
-            lastX = currentX;
-            lastY = currentY;
-            currentX = nextX;
-            currentY = nextY;
+            moveSet.Enqueue(dir);
         }
     }
+
 
     public void move(Form1 form)
     {

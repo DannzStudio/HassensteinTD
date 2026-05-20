@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 
 // Places spikes at nearest path, damaging enemies that step on them.
-// Has a very high damage, but a very slow attack speed.
+// Has a very high damage, but a very slow attack speed (3000).
 public class Trapper
 {
     public Rectangle rectangle;
