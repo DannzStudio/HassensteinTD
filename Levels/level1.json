@@ -1,5 +1,5 @@
 {
-  "startingGold": 250,
+  "startingGold": 1000,
   "startPosX": 0,
   "startPosY": 0,
   "levelLayout": [
@@ -19,25 +19,74 @@
   ],
   "Waves": [
     {
-      "waveReward": 100,
+      "waveReward": 1500,
       "Enemies": [
         {
-          "numberOfTheseEnemies": 4,
+          "numberOfTheseEnemies": 10,
           "speed": 50,
-          "health": 10,
-          "reward": 500,
+          "health": 50,
+          "reward": 100,
           "colorName": "red"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 150,
+          "reward": 100,
+          "colorName": "green"
+        },
+        {
+          "numberOfTheseEnemies": 10,
+          "speed": 50,
+          "health": 50,
+          "reward": 100,
+          "colorName": "red"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 150,
+          "reward": 100,
+          "colorName": "green"
+        },
+        {
+          "numberOfTheseEnemies": 10,
+          "speed": 50,
+          "health": 50,
+          "reward": 100,
+          "colorName": "red"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 150,
+          "reward": 100,
+          "colorName": "green"
+        },
+        {
+          "numberOfTheseEnemies": 10,
+          "speed": 50,
+          "health": 50,
+          "reward": 100,
+          "colorName": "red"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 150,
+          "reward": 100,
+          "colorName": "green"
         }
       ]
     },
     {
-      "waveReward": 100,
+      "waveReward": 2000,
       "Enemies": [
         {
           "numberOfTheseEnemies": 2,
           "speed": 50,
           "health": 10,
-          "reward": 500,
+          "reward": 100,
           "colorName": "red"
         }
       ]

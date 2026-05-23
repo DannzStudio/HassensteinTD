@@ -33,11 +33,15 @@
             waveLabel = new Label();
             waveCounterL = new Label();
             moneyLabel = new Label();
-            moneyCounterL = new Label();
+            goldCounterL = new Label();
             mainUpdate = new System.Windows.Forms.Timer(components);
             enemyUpdate = new System.Windows.Forms.Timer(components);
             archerUpdate = new System.Windows.Forms.Timer(components);
             arrowUpdate = new System.Windows.Forms.Timer(components);
+            hedgehogUpdate = new System.Windows.Forms.Timer(components);
+            trapperUpdate = new System.Windows.Forms.Timer(components);
+            bombUpdate = new System.Windows.Forms.Timer(components);
+            bomberUpdate = new System.Windows.Forms.Timer(components);
             ((System.ComponentModel.ISupportInitialize)mainDisplay).BeginInit();
             SuspendLayout();
             // 
@@ -83,15 +87,15 @@
             moneyLabel.TabIndex = 3;
             moneyLabel.Text = "Gold:";
             // 
-            // moneyCounterL
+            // goldCounterL
             // 
-            moneyCounterL.AutoSize = true;
-            moneyCounterL.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 238);
-            moneyCounterL.Location = new Point(796, 18);
-            moneyCounterL.Name = "moneyCounterL";
-            moneyCounterL.Size = new Size(112, 25);
-            moneyCounterL.TabIndex = 4;
-            moneyCounterL.Text = "9999999999";
+            goldCounterL.AutoSize = true;
+            goldCounterL.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 238);
+            goldCounterL.Location = new Point(796, 18);
+            goldCounterL.Name = "goldCounterL";
+            goldCounterL.Size = new Size(112, 25);
+            goldCounterL.TabIndex = 4;
+            goldCounterL.Text = "9999999999";
             // 
             // mainUpdate
             // 
@@ -114,14 +118,39 @@
             // arrowUpdate
             // 
             arrowUpdate.Enabled = true;
+            arrowUpdate.Interval = 25;
             arrowUpdate.Tick += arrowUpdate_Tick;
+            // 
+            // hedgehogUpdate
+            // 
+            hedgehogUpdate.Enabled = true;
+            hedgehogUpdate.Interval = 500;
+            hedgehogUpdate.Tick += hedgehogUpdate_Tick;
+            // 
+            // trapperUpdate
+            // 
+            trapperUpdate.Enabled = true;
+            trapperUpdate.Interval = 5000;
+            trapperUpdate.Tick += trapperUpdate_Tick;
+            // 
+            // bombUpdate
+            // 
+            bombUpdate.Enabled = true;
+            bombUpdate.Interval = 25;
+            bombUpdate.Tick += bombUpdate_Tick;
+            // 
+            // bomberUpdate
+            // 
+            bomberUpdate.Enabled = true;
+            bomberUpdate.Interval = 1500;
+            bomberUpdate.Tick += bomberUpdate_Tick;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(970, 817);
-            Controls.Add(moneyCounterL);
+            Controls.Add(goldCounterL);
             Controls.Add(moneyLabel);
             Controls.Add(waveCounterL);
             Controls.Add(waveLabel);
@@ -145,10 +174,14 @@
         private Label waveLabel;
         private Label waveCounterL;
         private Label moneyLabel;
-        private Label moneyCounterL;
+        private Label goldCounterL;
         private System.Windows.Forms.Timer mainUpdate;
         private System.Windows.Forms.Timer enemyUpdate;
         private System.Windows.Forms.Timer archerUpdate;
         private System.Windows.Forms.Timer arrowUpdate;
+        private System.Windows.Forms.Timer hedgehogUpdate;
+        private System.Windows.Forms.Timer trapperUpdate;
+        private System.Windows.Forms.Timer bombUpdate;
+        private System.Windows.Forms.Timer bomberUpdate;
     }
 }

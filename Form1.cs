@@ -17,15 +17,20 @@ namespace HassensteinTD
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             renderLevel(g);
+            renderSpikes(g);
             renderEnemies(g);
-            renderDragAndDrop(g);
+            if (!waveInProgress) renderDragAndDrop(g);
+            renderTowers(g);
             renderArrows(g);
+            renderBombs(g);
+            renderExplosions(g);
         }
 
         private void mainUpdate_Tick(object sender, EventArgs e)
         {
-            enemies.RemoveAll(enemy => enemy.health <= 0); // Removes all enemies with health <= 0 from the list (killed enemies)
+            removeEnemiesBellowHealth(); // Removes all killed enemies
             waveCounterL.Text = $"{currentWave}/{numberOfWaves}";
+            goldCounterL.Text = gold.ToString();
             mainDisplay.Refresh();
         }
 
@@ -67,6 +72,7 @@ namespace HassensteinTD
 
         int numberOfWaves = 0;
         int currentWave;
+        int gold = 0;
         private void loadLevel(string filePath)
         {
             levelManager.LoadLevel(filePath);
@@ -102,7 +108,7 @@ namespace HassensteinTD
 
         Bitmap mapImage;
 
-        
+
 
         private void preRenderLevelMap()
         {
@@ -160,6 +166,7 @@ namespace HassensteinTD
                     }
                 }
             }
+            gold = currentLevelData.startingGold;
             generateEnemyMoveSet();
         }
 
@@ -316,6 +323,23 @@ namespace HassensteinTD
                 enemies.Add(new Enemy(this, data.id, data.enemyQueueX, data.enemyQueueY, data.speed, data.health, data.reward, data.color));
             }
             if (enemyQueue != null) waveSpawning = enemyQueue.Count > 0;
+
+            //Checking for spikes
+            spikeUpdate();
+        }
+
+        private void removeEnemiesBellowHealth()
+        {
+            for (int i = enemies.Count - 1; i >= 0; i--)
+            {
+                Enemy enemy = enemies[i];
+
+                if (enemy.health <= 0)
+                {
+                    gold += enemy.reward;
+                    enemies.RemoveAt(i);
+                }
+            }
         }
 
         private void renderEnemies(Graphics g)
@@ -380,26 +404,6 @@ namespace HassensteinTD
             g.FillRectangle(towerBrush, bomberUIRec);
             g.DrawString("Bomber", arialFont, Brushes.White, bomberUIRec.X, archerUIRec.Y + 50);
 
-
-            // Drawing towers
-            foreach (Archer archer in archers)
-            {
-                g.FillRectangle(Brushes.Brown, archer.rectangle);
-                g.DrawString(archer.nearestEnemyID.ToString(), arialFont, Brushes.White, archer.rectangle.X, archer.rectangle.Y);
-            }
-            foreach (Hedgehog hedgehog in hedgehogs)
-            {
-                g.FillRectangle(Brushes.Gray, hedgehog.rectangle);
-            }
-            foreach (Trapper trapper in trappers)
-            {
-                g.FillRectangle(Brushes.Purple, trapper.rectangle);
-            }
-            foreach (Bomber bomber in bombers)
-            {
-                g.FillRectangle(Brushes.Orange, bomber.rectangle);
-            }
-
             // Drawing dragging
             if (isDragging)
                 g.FillRectangle(pickedTowerBrush, towerRec);
@@ -407,7 +411,7 @@ namespace HassensteinTD
 
         private void mainDisplay_MouseDown(object sender, MouseEventArgs e)
         {
-            if(waveInProgress) return; // Disable tower placement during waves
+            if (waveInProgress) return; // Disable tower placement during waves
             // Relative cursor position to mainDisplay
             int cursorX = e.X;
             int cursorY = e.Y;
@@ -524,11 +528,59 @@ namespace HassensteinTD
 
         //------------------------------- Tower Logic ------------------------------
 
+        private void renderTowers(Graphics g)
+        {
+            // Drawing towers
+            foreach (Archer archer in archers)
+            {
+                g.DrawEllipse(Pens.Blue, archer.rangeRec); // DEBUG
+                g.FillRectangle(Brushes.Brown, archer.rectangle);
+            }
+            foreach (Hedgehog hedgehog in hedgehogs)
+            {
+                g.DrawEllipse(Pens.Blue, hedgehog.rangeRec); // DEBUG
+                g.FillRectangle(Brushes.Gray, hedgehog.rectangle);
+            }
+            foreach (Trapper trapper in trappers)
+            {
+                g.FillRectangle(Brushes.Purple, trapper.rectangle);
+            }
+            foreach (Bomber bomber in bombers)
+            {
+                g.DrawEllipse(Pens.Blue, bomber.rangeRec); // DEBUG
+                g.FillRectangle(Brushes.Orange, bomber.rectangle);
+            }
+        }
+
         private void renderArrows(Graphics g)
         {
             foreach (Arrow arrow in arrows)
             {
                 g.FillEllipse(Brushes.Black, arrow.rectangle);
+            }
+        }
+
+        private void renderSpikes(Graphics g)
+        {
+            foreach (Spike spike in spikes)
+            {
+                g.DrawString(spike.numOfSpikes.ToString(), arialFont, Brushes.Red, spike.rectangle.X, spike.rectangle.Y); // DEBUG
+            }
+        }
+
+        private void renderBombs(Graphics g)
+        {
+            foreach (Bomb bomb in bombs)
+            {
+                g.FillEllipse(Brushes.Red, bomb.rectangle);
+            }
+        }
+
+        private void renderExplosions(Graphics g)
+        {
+            foreach (Explosion explosion in explosions)
+            {
+                g.FillEllipse(Brushes.OrangeRed, explosion.rectangle);
             }
         }
 
@@ -547,7 +599,148 @@ namespace HassensteinTD
             }
         }
 
+        public class Spike
+        {
+            public Rectangle rectangle;
+            public int damage;
+            public int numOfSpikes;
+            public Spike(int x, int y, int damage)
+            {
+                rectangle = new Rectangle(x, y, 50, 50);
+                this.damage = damage;
+                numOfSpikes = 0;
+            }
+        }
+
+        public class Bomb
+        {
+            public Rectangle rectangle;
+            public int damage;
+            public int speedX;
+            public int speedY;
+            public int radius;
+            public Bomb(int x, int y, int damage, int speedX, int speedY, int radius)
+            {
+                rectangle = new Rectangle(x, y, 20, 20);
+                this.damage = damage;
+                this.speedX = speedX;
+                this.speedY = speedY;
+                this.radius = radius;
+            }
+        }
+
+        public class Explosion
+        {
+            public Rectangle rectangle;
+            public int damage;
+            public int radius;
+            public Explosion(int x, int y, int damage, int radius)
+            {
+                rectangle = new Rectangle(x, y, radius, radius); // Explosion radius
+                this.damage = damage;
+            }
+        }
+
         public List<Arrow> arrows = new List<Arrow>();
+        public List<Spike> spikes = new List<Spike>();
+        public List<Bomb> bombs = new List<Bomb>();
+        public List<Explosion> explosions = new List<Explosion>();
+
+        private void arrowUpdate_Tick(object sender, EventArgs e)
+        {
+            if (!waveInProgress) return;
+            for (int i = arrows.Count - 1; i >= 0; i--)
+            {
+                Arrow arrow = arrows[i];
+                arrow.rectangle.Offset(arrow.speedX, arrow.speedY);
+
+                // If arrow is out of bounds, remove it
+                if (arrow.rectangle.X > 1000 || arrow.rectangle.X < -10 || arrow.rectangle.Y > 800 || arrow.rectangle.Y < -10)
+                {
+                    arrows.RemoveAt(i);
+                }
+                for (int j = 0; j < enemies.Count; j++)
+                {
+                    Enemy enemy = enemies[j];
+                    if (arrow.rectangle.IntersectsWith(enemy.rectangle)) // If arrow hits an enemy, damage it and remove the arrow
+                    {
+                        enemy.health -= arrow.damage;
+                        arrows.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void spikeUpdate()
+        {
+            if (!waveInProgress) return;
+            for (int i = 0; i < spikes.Count; i++)
+            {
+                Spike spike = spikes[i];
+                if (spike.numOfSpikes > 0) // If there are spikes on the trap, damage enemies and decrease spike count
+                {
+                    for (int j = 0; j < enemies.Count; j++)
+                    {
+                        Enemy enemy = enemies[j];
+                        if (spike.rectangle.IntersectsWith(enemy.rectangle))
+                        {
+                            enemy.health -= spike.damage;
+                            spike.numOfSpikes--;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void bombUpdate_Tick(object sender, EventArgs e)
+        {
+            if (!waveInProgress) return;
+
+            for (int i = bombs.Count - 1; i >= 0; i--)
+            {
+                Bomb bomb = bombs[i];
+                bomb.rectangle.Offset(bomb.speedX, bomb.speedY);
+
+                // If bomb is out of bounds, remove it
+                if (bomb.rectangle.X > 1000 || bomb.rectangle.X < -20 || bomb.rectangle.Y > 800 || bomb.rectangle.Y < -20)
+                {
+                    bombs.RemoveAt(i);
+                }
+                for (int j = 0; j < enemies.Count; j++)
+                {
+                    Enemy enemy = enemies[j];
+                    if (bomb.rectangle.IntersectsWith(enemy.rectangle)) // If bomb hits an enemy, damage it and remove the bomb
+                    {
+                        bombExplode(enemy.rectangle.X, enemy.rectangle.Y, bomb.damage, bomb.radius);
+                        bombs.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private async void bombExplode(int x, int y, int dmg, int radius)
+        {
+            int explosionX = x + 25 - radius / 2;
+            int explosionY = y + 25 - radius / 2;
+
+            Explosion currentExplosion = new Explosion(explosionX, explosionY, dmg, radius);
+            explosions.Add(currentExplosion);
+
+            for (int j = 0; j < enemies.Count; j++)
+            {
+                Enemy enemy = enemies[j];
+                if (currentExplosion.rectangle.IntersectsWith(enemy.rectangle)) // If enemy is within explosion radius, damage it
+                {
+                    enemy.health -= dmg;
+                }
+            }
+            
+            await Task.Delay(500); // wait 0,5s and then remove explosion
+            explosions.Remove(currentExplosion);
+
+        }
 
         private void archerUpdate_Tick(object sender, EventArgs e)
         {
@@ -558,19 +751,30 @@ namespace HassensteinTD
             }
         }
 
-        private void arrowUpdate_Tick(object sender, EventArgs e)
+        private void hedgehogUpdate_Tick(object sender, EventArgs e)
         {
             if (!waveInProgress) return;
-            for (int i = arrows.Count - 1; i >= 0; i--)
+            foreach (Hedgehog hedgehog in hedgehogs)
             {
-                Arrow arrow = arrows[i];
-                arrow.rectangle.Offset(arrow.speedX, arrow.speedY);
+                hedgehog.hedgehogAttack(this);
+            }
+        }
 
-                // If arrow is out of boids, remove it
-                if (arrow.rectangle.X > 1000 || arrow.rectangle.X < -10 || arrow.rectangle.Y > 800 || arrow.rectangle.Y < -10)
-                {
-                    arrows.RemoveAt(i);
-                }
+        private void trapperUpdate_Tick(object sender, EventArgs e)
+        {
+            if (!waveInProgress) return;
+            foreach (Trapper trapper in trappers)
+            {
+                trapper.trapperAttack(this);
+            }
+        }
+
+        private void bomberUpdate_Tick(object sender, EventArgs e)
+        {
+            if (!waveInProgress) return;
+            foreach (Bomber bomber in bombers)
+            {
+                bomber.archerAttack(this);
             }
         }
     }
