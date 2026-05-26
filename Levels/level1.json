@@ -1,5 +1,6 @@
 {
   "startingGold": 1000,
+  "lives": 300,
   "startPosX": 0,
   "startPosY": 0,
   "levelLayout": [
@@ -26,56 +27,8 @@
           "speed": 50,
           "health": 50,
           "reward": 100,
+          "damage": 10,
           "colorName": "red"
-        },
-        {
-          "numberOfTheseEnemies": 5,
-          "speed": 50,
-          "health": 150,
-          "reward": 100,
-          "colorName": "green"
-        },
-        {
-          "numberOfTheseEnemies": 10,
-          "speed": 50,
-          "health": 50,
-          "reward": 100,
-          "colorName": "red"
-        },
-        {
-          "numberOfTheseEnemies": 5,
-          "speed": 50,
-          "health": 150,
-          "reward": 100,
-          "colorName": "green"
-        },
-        {
-          "numberOfTheseEnemies": 10,
-          "speed": 50,
-          "health": 50,
-          "reward": 100,
-          "colorName": "red"
-        },
-        {
-          "numberOfTheseEnemies": 5,
-          "speed": 50,
-          "health": 150,
-          "reward": 100,
-          "colorName": "green"
-        },
-        {
-          "numberOfTheseEnemies": 10,
-          "speed": 50,
-          "health": 50,
-          "reward": 100,
-          "colorName": "red"
-        },
-        {
-          "numberOfTheseEnemies": 5,
-          "speed": 50,
-          "health": 150,
-          "reward": 100,
-          "colorName": "green"
         }
       ]
     },
@@ -87,6 +40,7 @@
           "speed": 50,
           "health": 10,
           "reward": 100,
+          "damage": 10,
           "colorName": "red"
         }
       ]

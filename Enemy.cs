@@ -12,16 +12,17 @@ public class Enemy
 
     public int speed;
     public int health;
+    public int damage;
     public int reward;
+    
     public Color color;
+    public Image sprite;
 
     public Rectangle rectangle;
 
-    int levelStartX;
-    int levelStartY;
 
     Queue<int> moveSet = new Queue<int>();
-    public Enemy(Form1 form, int i, int x, int y, int spd, int hth, int rew, Color clr )
+    public Enemy(Form1 form, int i, int x, int y, int spd, int hth, int dmg, int rew, Color clr )
     {
         // Initializing enemy values
 
@@ -30,13 +31,13 @@ public class Enemy
 
         speed = spd;
         health = hth;
+        damage = dmg;
         reward = rew;
         color = clr;
 
-        levelStartX = form.currentLevelData.startPosX;
-        levelStartY = form.currentLevelData.startPosY;
 
         getMoveSet(form);
+        getSprite(form);
     }
 
     private void getMoveSet(Form1 form) // Convert move set list in form into queue
@@ -45,6 +46,15 @@ public class Enemy
         {
             moveSet.Enqueue(dir);
         }
+    }
+
+    private void getSprite(Form1 form)
+    {
+        using(Image baseSprite = Image.FromFile("Images/Enemy.png"))
+        {
+            sprite = form.TintImage(baseSprite, color);
+        }
+        
     }
 
 

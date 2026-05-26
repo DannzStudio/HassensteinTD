@@ -42,11 +42,16 @@
             trapperUpdate = new System.Windows.Forms.Timer(components);
             bombUpdate = new System.Windows.Forms.Timer(components);
             bomberUpdate = new System.Windows.Forms.Timer(components);
+            livesLabel = new Label();
+            livesCounterL = new Label();
+            menuDisplay = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)mainDisplay).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)menuDisplay).BeginInit();
             SuspendLayout();
             // 
             // mainDisplay
             // 
+            mainDisplay.BackColor = Color.FromArgb(64, 64, 64);
             mainDisplay.Location = new Point(12, 56);
             mainDisplay.Name = "mainDisplay";
             mainDisplay.Size = new Size(950, 750);
@@ -60,40 +65,44 @@
             // waveLabel
             // 
             waveLabel.AutoSize = true;
-            waveLabel.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 238);
+            waveLabel.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold);
+            waveLabel.ForeColor = Color.White;
             waveLabel.Location = new Point(12, 18);
             waveLabel.Name = "waveLabel";
-            waveLabel.Size = new Size(62, 25);
+            waveLabel.Size = new Size(65, 25);
             waveLabel.TabIndex = 1;
             waveLabel.Text = "Wave:";
             // 
             // waveCounterL
             // 
             waveCounterL.AutoSize = true;
-            waveCounterL.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 238);
+            waveCounterL.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold);
+            waveCounterL.ForeColor = Color.White;
             waveCounterL.Location = new Point(80, 18);
             waveCounterL.Name = "waveCounterL";
-            waveCounterL.Size = new Size(22, 25);
+            waveCounterL.Size = new Size(23, 25);
             waveCounterL.TabIndex = 2;
             waveCounterL.Text = "1";
             // 
             // moneyLabel
             // 
             moneyLabel.AutoSize = true;
-            moneyLabel.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 238);
+            moneyLabel.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold);
+            moneyLabel.ForeColor = Color.White;
             moneyLabel.Location = new Point(734, 18);
             moneyLabel.Name = "moneyLabel";
-            moneyLabel.Size = new Size(56, 25);
+            moneyLabel.Size = new Size(60, 25);
             moneyLabel.TabIndex = 3;
             moneyLabel.Text = "Gold:";
             // 
             // goldCounterL
             // 
             goldCounterL.AutoSize = true;
-            goldCounterL.Font = new Font("Segoe UI", 14.25F, FontStyle.Regular, GraphicsUnit.Point, 238);
+            goldCounterL.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold);
+            goldCounterL.ForeColor = Color.White;
             goldCounterL.Location = new Point(796, 18);
             goldCounterL.Name = "goldCounterL";
-            goldCounterL.Size = new Size(112, 25);
+            goldCounterL.Size = new Size(122, 25);
             goldCounterL.TabIndex = 4;
             goldCounterL.Text = "9999999999";
             // 
@@ -145,11 +154,48 @@
             bomberUpdate.Interval = 1500;
             bomberUpdate.Tick += bomberUpdate_Tick;
             // 
+            // livesLabel
+            // 
+            livesLabel.AutoSize = true;
+            livesLabel.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold);
+            livesLabel.ForeColor = Color.White;
+            livesLabel.Location = new Point(370, 18);
+            livesLabel.Name = "livesLabel";
+            livesLabel.Size = new Size(60, 25);
+            livesLabel.TabIndex = 5;
+            livesLabel.Text = "Lives:";
+            // 
+            // livesCounterL
+            // 
+            livesCounterL.AutoSize = true;
+            livesCounterL.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold);
+            livesCounterL.ForeColor = Color.White;
+            livesCounterL.Location = new Point(433, 18);
+            livesCounterL.Name = "livesCounterL";
+            livesCounterL.Size = new Size(67, 25);
+            livesCounterL.TabIndex = 6;
+            livesCounterL.Text = "99999";
+            // 
+            // menuDisplay
+            // 
+            menuDisplay.BackColor = SystemColors.ControlDarkDark;
+            menuDisplay.Location = new Point(1000, 1000);
+            menuDisplay.Name = "menuDisplay";
+            menuDisplay.Size = new Size(970, 817);
+            menuDisplay.TabIndex = 7;
+            menuDisplay.TabStop = false;
+            menuDisplay.Visible = false;
+            menuDisplay.Paint += menuDisplay_Paint;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            BackColor = SystemColors.ControlDarkDark;
             ClientSize = new Size(970, 817);
+            Controls.Add(menuDisplay);
+            Controls.Add(livesCounterL);
+            Controls.Add(livesLabel);
             Controls.Add(goldCounterL);
             Controls.Add(moneyLabel);
             Controls.Add(waveCounterL);
@@ -164,6 +210,7 @@
             Load += Form1_Load;
             KeyDown += Form1_KeyDown;
             ((System.ComponentModel.ISupportInitialize)mainDisplay).EndInit();
+            ((System.ComponentModel.ISupportInitialize)menuDisplay).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -183,5 +230,8 @@
         private System.Windows.Forms.Timer trapperUpdate;
         private System.Windows.Forms.Timer bombUpdate;
         private System.Windows.Forms.Timer bomberUpdate;
+        private Label livesLabel;
+        private Label livesCounterL;
+        private PictureBox menuDisplay;
     }
 }

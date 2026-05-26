@@ -23,6 +23,7 @@ public class LevelManager
     public class LevelData
     {
         public int startingGold { get; set; }
+        public int lives { get; set; }
         public string[] levelLayout { get; set; }
         public int startPosX { get; set; }
         public int startPosY { get; set; }
@@ -40,6 +41,7 @@ public class LevelManager
         public int numberOfTheseEnemies { get; set; }
         public int speed { get; set; }
         public int health { get; set; }
+        public int damage { get; set; }
         public int reward { get; set; }
         public string colorName { get; set; }
         [JsonIgnore]

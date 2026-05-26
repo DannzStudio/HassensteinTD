@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Forms;
 
@@ -28,21 +29,24 @@ namespace HassensteinTD
 
         private void mainUpdate_Tick(object sender, EventArgs e)
         {
-            removeEnemiesBellowHealth(); // Removes all killed enemies
-            waveCounterL.Text = $"{currentWave}/{numberOfWaves}";
-            goldCounterL.Text = gold.ToString();
+            checkEnemyStates();
+            updateStats();
             mainDisplay.Refresh();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            init();
+            //initMenu();
+            initLevel();
+
             loadLevel("Levels/level1.json");
         }
 
         Font arialFont = new Font("Arial", 14, FontStyle.Bold);
 
-        private void init()
+        
+
+        private void initLevel()
         {
             int canvasWidth = 950;
             int buttonWidth = 100;
@@ -52,6 +56,7 @@ namespace HassensteinTD
             // UI tower buttons
             int gap = (canvasWidth - (buttonCount * buttonWidth)) / (buttonCount + 1); // Calculate gap based on canvas width, button count and button width
 
+            backgroundTowerSelRec = new Rectangle(0, yPos, canvasWidth, 100);
             archerUIRec = new Rectangle(gap, yPos, buttonWidth, buttonWidth);
             hedgehogUIRec = new Rectangle(gap * 2 + buttonWidth, yPos, buttonWidth, buttonWidth);
             trapperUIRec = new Rectangle(gap * 3 + buttonWidth * 2, yPos, buttonWidth, buttonWidth);
@@ -73,11 +78,16 @@ namespace HassensteinTD
         int numberOfWaves = 0;
         int currentWave;
         int gold = 0;
+        int lives;
         private void loadLevel(string filePath)
         {
+            menuDisplay.Location = new Point(1000, 1000);
+            menuDisplay.Enabled = false;
             levelManager.LoadLevel(filePath);
             currentLevelData = levelManager.CurrentLevel;
             numberOfWaves = currentLevelData.Waves.Count;
+            gold = currentLevelData.startingGold;
+            lives = currentLevelData.lives;
             currentWave = 0;
             if (currentLevelData != null)
             {
@@ -105,10 +115,9 @@ namespace HassensteinTD
         }
 
         public Tile[,] logicalMap; // 2D array representing the level layout for pathfinding and tower placement logic
+        public Tile endPoint;
 
         Bitmap mapImage;
-
-
 
         private void preRenderLevelMap()
         {
@@ -146,12 +155,12 @@ namespace HassensteinTD
 
                             if (tile == '.')
                             {
-                                g.FillRectangle(grassBrush, rect); // Grass
+                                g.DrawImage(Image.FromFile("Images/Grass.png"), rect); // Grass
                                 isBuildable = true;
                             }
                             else if (tile == '#')
                             {
-                                g.FillRectangle(pathBrush, rect); // Path
+                                g.DrawImage(Image.FromFile("Images/Path.png"), rect); // Path
                                 isPath = true;
                             }
                             else if (tile == '*')
@@ -159,14 +168,19 @@ namespace HassensteinTD
                                 g.FillRectangle(endBrush, rect); // End
                                 isPath = true;
                                 isEnd = true;
+                                endPoint = new Tile(x, y, true, false, true);
                             }
 
                             logicalMap[x, y] = new Tile(x, y, isPath, isBuildable, isEnd);
                         }
                     }
+
+                    Rectangle castleRec = new Rectangle(900, 0, 50, 650);
+                    g.DrawImage(Image.FromFile("Images/Castle.png"), castleRec);
+
                 }
             }
-            gold = currentLevelData.startingGold;
+
             generateEnemyMoveSet();
         }
 
@@ -241,10 +255,14 @@ namespace HassensteinTD
             }
         }
 
+        Rectangle backgroundTowerSelRec;
+        Image backgroundTowerSel = Image.FromFile("Images/TowerSelBackground.png");
+
         private void renderLevel(Graphics g)
         {
             if (!levelLoaded) return;
             g.DrawImage(mapImage, 0, 0);
+            g.DrawImage(backgroundTowerSel, backgroundTowerSelRec);
         }
 
         //------------------------------- Wave Logic ------------------------------
@@ -261,15 +279,17 @@ namespace HassensteinTD
             public int enemyQueueY;
             public int speed;
             public int health;
+            public int damage;
             public int reward;
             public Color color;
-            public EnemyInQueueData(int i, int x, int y, int spd, int hth, int rew, Color clr)
+            public EnemyInQueueData(int i, int x, int y, int spd, int hth, int dmg, int rew, Color clr)
             {
                 id = i;
                 enemyQueueX = x;
                 enemyQueueY = y;
                 speed = spd;
                 health = hth;
+                damage = dmg;
                 reward = rew;
                 color = clr;
             }
@@ -293,7 +313,7 @@ namespace HassensteinTD
             {
                 for (int j = 0; j < enemyDatas[i].numberOfTheseEnemies; j++)
                 {
-                    enemyQueue.Enqueue(new EnemyInQueueData(enemyNextID, startX, startY, enemyDatas[i].speed, enemyDatas[i].health, enemyDatas[i].reward, enemyDatas[i].color));
+                    enemyQueue.Enqueue(new EnemyInQueueData(enemyNextID, startX, startY, enemyDatas[i].speed, enemyDatas[i].health, enemyDatas[i].damage, enemyDatas[i].health, enemyDatas[i].color));
                     enemyNextID++;
                 }
             }
@@ -320,7 +340,7 @@ namespace HassensteinTD
             if (waveSpawning && enemyQueue.Count > 0)
             {
                 EnemyInQueueData data = enemyQueue.Dequeue();
-                enemies.Add(new Enemy(this, data.id, data.enemyQueueX, data.enemyQueueY, data.speed, data.health, data.reward, data.color));
+                enemies.Add(new Enemy(this, data.id, data.enemyQueueX, data.enemyQueueY, data.speed, data.health, data.damage, data.reward, data.color));
             }
             if (enemyQueue != null) waveSpawning = enemyQueue.Count > 0;
 
@@ -328,17 +348,33 @@ namespace HassensteinTD
             spikeUpdate();
         }
 
-        private void removeEnemiesBellowHealth()
+        private void checkEnemyStates()
         {
             for (int i = enemies.Count - 1; i >= 0; i--)
             {
                 Enemy enemy = enemies[i];
 
-                if (enemy.health <= 0)
-                {
-                    gold += enemy.reward;
-                    enemies.RemoveAt(i);
-                }
+                removeEnemiesBellowHealth(enemy);
+                enemyReachedEnd(enemy);
+            }
+        }
+
+        private void removeEnemiesBellowHealth(Enemy enemy)
+        {
+            if (enemy.health <= 0)
+            {
+                gold += enemy.reward;
+                totalEnemiesKilled++;
+                enemies.Remove(enemy);
+            }
+        }
+
+        private void enemyReachedEnd(Enemy enemy)
+        {
+            if (enemy.rectangle.X / 50 == endPoint.gridX && enemy.rectangle.Y / 50 == endPoint.gridY)
+            {
+                lives -= enemy.damage;
+                enemies.Remove(enemy);
             }
         }
 
@@ -346,23 +382,43 @@ namespace HassensteinTD
         {
             foreach (Enemy enemy in enemies)
             {
-                using (SolidBrush b = new SolidBrush(enemy.color)) // Memory leak prevention
-                {
-                    g.FillEllipse(b, enemy.rectangle);
-                }
-
-                // Debug
-                g.DrawString(enemy.id.ToString(), arialFont, Brushes.White, enemy.rectangle.X, enemy.rectangle.Y);
+                g.DrawImage(enemy.sprite, enemy.rectangle);
             }
         }
+
+        public Image TintImage(Image originalImage, Color tintColor)
+        {
+            Image tintedImage = new Bitmap(originalImage.Width, originalImage.Height); // Create new image
+
+            float r = tintColor.R / 255f;
+            float g = tintColor.G / 255f;
+            float b = tintColor.B / 255f;
+
+            // Create multiplicative color matrix to apply the tint color to the original image
+            ColorMatrix colorMatrix = new ColorMatrix(new float[][]
+            {
+                new float[] {r, 0, 0, 0, 0}, // R
+                new float[] {0, g, 0, 0, 0}, // G
+                new float[] {0, 0, b, 0, 0}, // B
+                new float[] {0, 0, 0, 1, 0}, // Aplha
+                new float[] {0, 0, 0, 0, 1} // Translation
+            });
+
+            ImageAttributes attributes = new ImageAttributes();
+            attributes.SetColorMatrix(colorMatrix);
+
+            // Generate tinted version of the original image
+            using (Graphics gr = Graphics.FromImage(tintedImage))
+            {
+                gr.DrawImage(originalImage, new Rectangle(0, 0, tintedImage.Width, tintedImage.Height), 0, 0, originalImage.Width, originalImage.Height, GraphicsUnit.Pixel, attributes);
+            }
+
+            return tintedImage;
+        }
+
         private void Form1_KeyDown(object sender, KeyEventArgs e) // Debug: Spawn enemy on spacebar press
         {
-            if (e.KeyCode == Keys.Space)
-            {
-                enemies.Add(new Enemy(this, enemyNextID, 0, 0, 50, 10, 100, Color.Green));
-                enemyNextID++;
-            }
-            else if (e.KeyCode == Keys.L) // Debug: Load level on L press
+            if (e.KeyCode == Keys.L) // Debug: Load level on L press
             {
                 if (currentWave != numberOfWaves) startWave(currentWave);
             }
@@ -392,7 +448,6 @@ namespace HassensteinTD
         bool isDragging = false;
         int draggingID = 0; // 1-Archer , 2-Hedgehog, 3-Trapper, 4-Bomber
 
-
         private void renderDragAndDrop(Graphics g)
         {
             g.FillRectangle(towerBrush, archerUIRec);
@@ -411,7 +466,7 @@ namespace HassensteinTD
 
         private void mainDisplay_MouseDown(object sender, MouseEventArgs e)
         {
-            if (waveInProgress) return; // Disable tower placement during waves
+            if (waveInProgress || !levelLoaded) return; // Disable tower placement during waves or menu
             // Relative cursor position to mainDisplay
             int cursorX = e.X;
             int cursorY = e.Y;
@@ -458,7 +513,7 @@ namespace HassensteinTD
 
         private void mainDisplay_MouseMove(object sender, MouseEventArgs e)
         {
-            if (waveInProgress) return;
+            if (waveInProgress || !levelLoaded) return;
             int cursorX = e.X;
             int cursorY = e.Y;
 
@@ -475,18 +530,18 @@ namespace HassensteinTD
 
         private void mainDisplay_MouseUp(object sender, MouseEventArgs e)
         {
-            if (waveInProgress) return;
+            if (waveInProgress || !levelLoaded) return;
             isDragging = false;
 
             int cursorX = e.X;
             int cursorY = e.Y;
 
-            int gridX = cursorX / gridSize; // Calculate grid coordinatesy
-            int gridY = cursorY / gridSize;
-
             // Snap to closest grid
             towerRec.X = (int)(Math.Round((float)towerRec.X / gridSize) * gridSize);
             towerRec.Y = (int)(Math.Round((float)towerRec.Y / gridSize) * gridSize);
+
+            int gridX = towerRec.X / gridSize; // Calculate grid coordinates
+            int gridY = towerRec.Y / gridSize;
 
             if (towerRec.Y <= 600)
             {
@@ -534,21 +589,33 @@ namespace HassensteinTD
             foreach (Archer archer in archers)
             {
                 g.DrawEllipse(Pens.Blue, archer.rangeRec); // DEBUG
-                g.FillRectangle(Brushes.Brown, archer.rectangle);
+                using (Image archerSprite = Image.FromFile("Images/Archer.png"))
+                {
+                    g.DrawImage(archerSprite, archer.rectangle);
+                }
             }
             foreach (Hedgehog hedgehog in hedgehogs)
             {
                 g.DrawEllipse(Pens.Blue, hedgehog.rangeRec); // DEBUG
-                g.FillRectangle(Brushes.Gray, hedgehog.rectangle);
+                using(Image hedgehogSprite = Image.FromFile("Images/Hedgehog.png"))
+                {
+                    g.DrawImage(hedgehogSprite, hedgehog.rectangle);
+                }
             }
             foreach (Trapper trapper in trappers)
             {
-                g.FillRectangle(Brushes.Purple, trapper.rectangle);
+                using (Image trapperSprite = Image.FromFile("Images/Trapper.png"))
+                {
+                    g.DrawImage(trapperSprite, trapper.rectangle);
+                }
             }
             foreach (Bomber bomber in bombers)
             {
+                using (Image bomberSprite = Image.FromFile("Images/Bomber.png"))
+                {
+                    g.DrawImage(bomberSprite, bomber.rectangle);
+                }
                 g.DrawEllipse(Pens.Blue, bomber.rangeRec); // DEBUG
-                g.FillRectangle(Brushes.Orange, bomber.rectangle);
             }
         }
 
@@ -648,7 +715,7 @@ namespace HassensteinTD
 
         private void arrowUpdate_Tick(object sender, EventArgs e)
         {
-            if (!waveInProgress) return;
+            if (!waveInProgress || !levelLoaded) return;
             for (int i = arrows.Count - 1; i >= 0; i--)
             {
                 Arrow arrow = arrows[i];
@@ -665,6 +732,7 @@ namespace HassensteinTD
                     if (arrow.rectangle.IntersectsWith(enemy.rectangle)) // If arrow hits an enemy, damage it and remove the arrow
                     {
                         enemy.health -= arrow.damage;
+                        totalDamageDealt += arrow.damage;
                         arrows.RemoveAt(i);
                         break;
                     }
@@ -674,7 +742,7 @@ namespace HassensteinTD
 
         private void spikeUpdate()
         {
-            if (!waveInProgress) return;
+            if (!waveInProgress || !levelLoaded) return;
             for (int i = 0; i < spikes.Count; i++)
             {
                 Spike spike = spikes[i];
@@ -686,6 +754,7 @@ namespace HassensteinTD
                         if (spike.rectangle.IntersectsWith(enemy.rectangle))
                         {
                             enemy.health -= spike.damage;
+                            totalDamageDealt += spike.damage;
                             spike.numOfSpikes--;
                         }
                     }
@@ -695,7 +764,7 @@ namespace HassensteinTD
 
         private void bombUpdate_Tick(object sender, EventArgs e)
         {
-            if (!waveInProgress) return;
+            if (!waveInProgress || !levelLoaded) return;
 
             for (int i = bombs.Count - 1; i >= 0; i--)
             {
@@ -734,9 +803,10 @@ namespace HassensteinTD
                 if (currentExplosion.rectangle.IntersectsWith(enemy.rectangle)) // If enemy is within explosion radius, damage it
                 {
                     enemy.health -= dmg;
+                    totalDamageDealt += dmg;
                 }
             }
-            
+
             await Task.Delay(500); // wait 0,5s and then remove explosion
             explosions.Remove(currentExplosion);
 
@@ -744,7 +814,7 @@ namespace HassensteinTD
 
         private void archerUpdate_Tick(object sender, EventArgs e)
         {
-            if (!waveInProgress) return;
+            if (!waveInProgress || !levelLoaded) return;
             foreach (Archer archer in archers)
             {
                 archer.archerAttack(this);
@@ -753,7 +823,7 @@ namespace HassensteinTD
 
         private void hedgehogUpdate_Tick(object sender, EventArgs e)
         {
-            if (!waveInProgress) return;
+            if (!waveInProgress || !levelLoaded) return;
             foreach (Hedgehog hedgehog in hedgehogs)
             {
                 hedgehog.hedgehogAttack(this);
@@ -762,7 +832,7 @@ namespace HassensteinTD
 
         private void trapperUpdate_Tick(object sender, EventArgs e)
         {
-            if (!waveInProgress) return;
+            if (!waveInProgress || !levelLoaded) return;
             foreach (Trapper trapper in trappers)
             {
                 trapper.trapperAttack(this);
@@ -771,11 +841,96 @@ namespace HassensteinTD
 
         private void bomberUpdate_Tick(object sender, EventArgs e)
         {
-            if (!waveInProgress) return;
+            if (!waveInProgress || !levelLoaded) return;
             foreach (Bomber bomber in bombers)
             {
                 bomber.archerAttack(this);
             }
+        }
+
+        //------------------------------- UI Logic --------------------------------
+
+        int gameState = 0; // 0-Menu, 1-Level Selector, 2-Playing
+
+        // Menu
+        Rectangle logo;
+        Rectangle playButton;
+
+        // Level selector
+        Rectangle level1Button;
+        Rectangle level2Button;
+        Rectangle level3Button;
+
+        private void initMenu()
+        {
+            gameState = 0;
+            menuDisplay.Visible = true;
+            menuDisplay.Location = new Point(0, 0);
+
+            mainDisplay.Visible = false;
+        }
+
+        private void initLevelSelector()
+        {
+            gameState = 1;
+            menuDisplay.Visible = true;
+            menuDisplay.Location = new Point(0, 0);
+
+            mainDisplay.Visible = false;
+        }
+
+        private void renderMenu(Graphics g)
+        {
+            // Render menu background, logo and play button
+        }
+
+        private void renderLevelSelector(Graphics g)
+        {
+            // Render level selector background and level buttons
+        }
+
+        private void updateStats()
+        {
+            waveCounterL.Text = $"{currentWave}/{numberOfWaves}";
+            goldCounterL.Text = gold.ToString();
+            livesCounterL.Text = lives.ToString();
+        }
+
+        int totalDamageDealt = 0;
+        int totalEnemiesKilled = 0;
+
+        private void gameOver()
+        {
+
+        }
+        private void renderGameOver(Graphics g)
+        {
+
+        }
+
+        private void waveCompleted()
+        {
+
+        }
+        private void renderWaveCompleted(Graphics g)
+        {
+
+        }
+
+        private void victory()
+        {
+
+        }
+        private void renderVictory(Graphics g)
+        {
+
+        }
+
+        private void menuDisplay_Paint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
         }
     }
 }
