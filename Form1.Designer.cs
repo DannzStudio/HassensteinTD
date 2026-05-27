@@ -186,6 +186,8 @@
             menuDisplay.TabStop = false;
             menuDisplay.Visible = false;
             menuDisplay.Paint += menuDisplay_Paint;
+            menuDisplay.MouseDown += menuDisplay_MouseDown;
+            menuDisplay.MouseMove += menuDisplay_MouseMove;
             // 
             // Form1
             // 

@@ -17,6 +17,8 @@ namespace HassensteinTD
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
+            if (gameState != 2) return;
+
             renderLevel(g);
             renderSpikes(g);
             renderEnemies(g);
@@ -36,18 +38,21 @@ namespace HassensteinTD
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //initMenu();
-            initLevel();
+            initMenu();
+            //initLevel();
 
-            loadLevel("Levels/level1.json");
+            //loadLevel("Levels/level1.json");
         }
 
         Font arialFont = new Font("Arial", 14, FontStyle.Bold);
 
-        
+
 
         private void initLevel()
         {
+            mainDisplay.Enabled = true;
+            mainDisplay.BringToFront();
+            mainDisplay.Visible = true;
             int canvasWidth = 950;
             int buttonWidth = 100;
             int buttonCount = 4;
@@ -64,6 +69,8 @@ namespace HassensteinTD
 
             // Level manager
             levelManager = new LevelManager(this);
+
+            menuDisplay.SendToBack();
         }
 
         //------------------------------- Level Manager ----------------------------
@@ -588,7 +595,6 @@ namespace HassensteinTD
             // Drawing towers
             foreach (Archer archer in archers)
             {
-                g.DrawEllipse(Pens.Blue, archer.rangeRec); // DEBUG
                 using (Image archerSprite = Image.FromFile("Images/Archer.png"))
                 {
                     g.DrawImage(archerSprite, archer.rectangle);
@@ -596,8 +602,7 @@ namespace HassensteinTD
             }
             foreach (Hedgehog hedgehog in hedgehogs)
             {
-                g.DrawEllipse(Pens.Blue, hedgehog.rangeRec); // DEBUG
-                using(Image hedgehogSprite = Image.FromFile("Images/Hedgehog.png"))
+                using (Image hedgehogSprite = Image.FromFile("Images/Hedgehog.png"))
                 {
                     g.DrawImage(hedgehogSprite, hedgehog.rectangle);
                 }
@@ -615,7 +620,6 @@ namespace HassensteinTD
                 {
                     g.DrawImage(bomberSprite, bomber.rectangle);
                 }
-                g.DrawEllipse(Pens.Blue, bomber.rangeRec); // DEBUG
             }
         }
 
@@ -623,7 +627,10 @@ namespace HassensteinTD
         {
             foreach (Arrow arrow in arrows)
             {
-                g.FillEllipse(Brushes.Black, arrow.rectangle);
+                using (Image arrowSprite = Image.FromFile("Images/Arrow.png"))
+                {
+                    g.DrawImage(arrowSprite, arrow.rectangle);
+                }
             }
         }
 
@@ -639,7 +646,10 @@ namespace HassensteinTD
         {
             foreach (Bomb bomb in bombs)
             {
-                g.FillEllipse(Brushes.Red, bomb.rectangle);
+                using (Image bombSprite = Image.FromFile("Images/Bomb.png"))
+                {
+                    g.DrawImage(bombSprite, bomb.rectangle);
+                }
             }
         }
 
@@ -647,7 +657,10 @@ namespace HassensteinTD
         {
             foreach (Explosion explosion in explosions)
             {
-                g.FillEllipse(Brushes.OrangeRed, explosion.rectangle);
+                using (Image explosionSprite = Image.FromFile("Images/Explosion.png"))
+                {
+                    g.DrawImage(explosionSprite, explosion.rectangle);
+                }
             }
         }
 
@@ -856,37 +869,58 @@ namespace HassensteinTD
         Rectangle logo;
         Rectangle playButton;
 
-        // Level selector
-        Rectangle level1Button;
-        Rectangle level2Button;
-        Rectangle level3Button;
-
         private void initMenu()
         {
             gameState = 0;
             menuDisplay.Visible = true;
             menuDisplay.Location = new Point(0, 0);
+            menuDisplay.BringToFront();
 
             mainDisplay.Visible = false;
+
+            logo = new Rectangle(0, 0, 970, 817);
+            playButton = new Rectangle(320, 430, 331, 124);
+
+            menuDisplay.Refresh();
         }
+
+        // Level selector
+        Rectangle level1Button;
+        Rectangle level2Button;
+        Rectangle level3Button;
 
         private void initLevelSelector()
         {
             gameState = 1;
             menuDisplay.Visible = true;
             menuDisplay.Location = new Point(0, 0);
+            menuDisplay.BringToFront();
 
             mainDisplay.Visible = false;
+
+            level1Button = new Rectangle(125, 400,200,200);
+            level2Button = new Rectangle(375, 400,200,200);
+            level3Button = new Rectangle(625, 400,200,200);
         }
 
         private void renderMenu(Graphics g)
         {
-            // Render menu background, logo and play button
+            using(Image menuBackground = Image.FromFile("Images/Logo.png"))
+            using(Image playButtonIMG = Image.FromFile("Images/PlayBTN.png"))
+            {
+                g.DrawImage(menuBackground, logo);
+                g.DrawImage(playButtonIMG, playButton);
+            } 
         }
 
         private void renderLevelSelector(Graphics g)
         {
-            // Render level selector background and level buttons
+            using (Image menuBackground = Image.FromFile("Images/Logo.png"))
+                g.DrawImage(menuBackground, logo);
+            g.DrawString("Select Level", new Font("Arial", 50), Brushes.White, 300, 250);
+            g.FillRectangle(Brushes.Blue, level1Button);
+            g.FillRectangle(Brushes.Blue, level2Button);
+            g.FillRectangle(Brushes.Blue, level3Button);
         }
 
         private void updateStats()
@@ -931,6 +965,77 @@ namespace HassensteinTD
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
+            switch(gameState)
+            {
+                case 0:
+                    renderMenu(g);
+                    break;
+                case 1:
+                    renderLevelSelector(g);
+                    break;
+            }
+        }
+
+        private void menuDisplay_MouseMove(object sender, MouseEventArgs e)
+        {
+            int cursorX = e.X;
+            int cursorY = e.Y;
+
+            // Menu animations
+            if (playButton.Contains(cursorX, cursorY))
+                playButton = new Rectangle(320, 410, 331, 124);
+            else
+                playButton = new Rectangle(320, 430, 331, 124);
+
+            // Level selector animations
+            if (level1Button.Contains(cursorX, cursorY))
+                level1Button = new Rectangle(125, 380, 200, 200);
+            else
+                level1Button = new Rectangle(125, 400, 200, 200);
+            if (level2Button.Contains(cursorX, cursorY))
+                level2Button = new Rectangle(375, 380, 200, 200);
+            else
+                level2Button = new Rectangle(375, 400, 200, 200);
+            if (level3Button.Contains(cursorX, cursorY))
+                level3Button = new Rectangle(625, 380, 200, 200);
+            else
+                level3Button = new Rectangle(625, 400, 200, 200);
+
+            menuDisplay.Refresh();
+        }
+
+        private void menuDisplay_MouseDown(object sender, MouseEventArgs e)
+        {
+            int cursorX = e.X;
+            int cursorY = e.Y;
+
+            if (gameState == 1)
+            {
+                if (level1Button.Contains(cursorX, cursorY))
+                {
+                    initLevel();
+                    loadLevel("Levels/level1.json");
+                    gameState = 2;
+                }
+                else if (level2Button.Contains(cursorX, cursorY))
+                {
+                    //loadLevel(2);
+                    gameState = 2;
+                }
+                else if (level3Button.Contains(cursorX, cursorY))
+                {
+                    //loadLevel(3);
+                    gameState = 2;
+                }
+            }
+            else if (playButton.Contains(cursorX, cursorY) && gameState == 0) // Check if tower rectangle is clicked
+            {
+                initLevelSelector();
+                gameState = 1;
+            }
+
+            
+            menuDisplay.Refresh();
         }
     }
 }
