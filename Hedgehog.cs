@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 public class Hedgehog
 {
     public Rectangle rectangle;
-    public Rectangle rangeRec; // Debug
     int id;
     int range = 200;
     int arrowSpeed = 10;
@@ -24,7 +23,6 @@ public class Hedgehog
     public Hedgehog(Form1 form, int i, int x, int y)
     {
         rectangle = new Rectangle(x, y, 50, 50);
-        rangeRec = new Rectangle(x - range + 25, y - range + 25, range * 2, range * 2); // DEBUG
         id = i;
         range *= range;
         this.x = x;

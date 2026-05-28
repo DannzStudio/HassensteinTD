@@ -45,6 +45,7 @@
             livesLabel = new Label();
             livesCounterL = new Label();
             menuDisplay = new PictureBox();
+            startWaveBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)mainDisplay).BeginInit();
             ((System.ComponentModel.ISupportInitialize)menuDisplay).BeginInit();
             SuspendLayout();
@@ -189,12 +190,26 @@
             menuDisplay.MouseDown += menuDisplay_MouseDown;
             menuDisplay.MouseMove += menuDisplay_MouseMove;
             // 
+            // startWaveBtn
+            // 
+            startWaveBtn.BackColor = Color.PaleGreen;
+            startWaveBtn.Enabled = false;
+            startWaveBtn.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 238);
+            startWaveBtn.Location = new Point(134, 8);
+            startWaveBtn.Name = "startWaveBtn";
+            startWaveBtn.Size = new Size(127, 44);
+            startWaveBtn.TabIndex = 8;
+            startWaveBtn.Text = "Start Wave";
+            startWaveBtn.UseVisualStyleBackColor = false;
+            startWaveBtn.Click += startWaveBtn_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.ControlDarkDark;
             ClientSize = new Size(970, 817);
+            Controls.Add(startWaveBtn);
             Controls.Add(menuDisplay);
             Controls.Add(livesCounterL);
             Controls.Add(livesLabel);
@@ -210,7 +225,6 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "HassensteinTD";
             Load += Form1_Load;
-            KeyDown += Form1_KeyDown;
             ((System.ComponentModel.ISupportInitialize)mainDisplay).EndInit();
             ((System.ComponentModel.ISupportInitialize)menuDisplay).EndInit();
             ResumeLayout(false);
@@ -235,5 +249,6 @@
         private Label livesLabel;
         private Label livesCounterL;
         private PictureBox menuDisplay;
+        private Button startWaveBtn;
     }
 }

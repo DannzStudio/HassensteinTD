@@ -1,46 +1,155 @@
 {
-  "startingGold": 1000,
-  "lives": 300,
+  "levelID": 0,
+  "startingGold": 2000,
+  "lives": 100,
   "startPosX": 0,
-  "startPosY": 0,
+  "startPosY": 4,
   "levelLayout": [
-    "####........####...",
-    "...#........#..#...",
-    "...#...###..#..#...",
-    "...#...#.#..#..#...",
-    "...#...#.#..#..#...",
-    "...#####.#..#..#...",
-    ".........#..#..###*",
-    "....######..#......",
-    "....#.......#......",
-    "....#########......",
+    "...................",
+    "...................",
+    "...................",
+    "...................",
+    "####...######......",
+    "...#...#....#......",
+    "...#...#....#.####*",
+    "...#####....###....",
+    "...................",
+    "...................",
     "...................",
     "...................",
     "..................."
   ],
   "Waves": [
     {
-      "waveReward": 1500,
+      "waveReward": 500,
       "Enemies": [
         {
-          "numberOfTheseEnemies": 10,
+          "numberOfTheseEnemies": 5,
           "speed": 50,
-          "health": 50,
+          "health": 10,
+          "reward": 50,
+          "damage": 5,
+          "colorName": "white"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 20,
           "reward": 100,
           "damage": 10,
-          "colorName": "red"
+          "colorName": "green"
         }
       ]
     },
     {
-      "waveReward": 2000,
+      "waveReward": 500,
       "Enemies": [
         {
-          "numberOfTheseEnemies": 2,
+          "numberOfTheseEnemies": 10,
           "speed": 50,
-          "health": 10,
+          "health": 20,
           "reward": 100,
           "damage": 10,
+          "colorName": "green"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 10,
+          "reward": 50,
+          "damage": 5,
+          "colorName": "white"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 20,
+          "reward": 100,
+          "damage": 10,
+          "colorName": "green"
+        }
+      ]
+    },
+    {
+      "waveReward": 500,
+      "Enemies": [
+        {
+          "numberOfTheseEnemies": 15,
+          "speed": 50,
+          "health": 20,
+          "reward": 100,
+          "damage": 10,
+          "colorName": "green"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 50,
+          "reward": 200,
+          "damage": 50,
+          "colorName": "orange"
+        }
+      ]
+    },
+    {
+      "waveReward": 700,
+      "Enemies": [
+        {
+          "numberOfTheseEnemies": 10,
+          "speed": 50,
+          "health": 20,
+          "reward": 100,
+          "damage": 10,
+          "colorName": "green"
+        },
+        {
+          "numberOfTheseEnemies": 5,
+          "speed": 50,
+          "health": 10,
+          "reward": 50,
+          "damage": 5,
+          "colorName": "white"
+        },
+        {
+          "numberOfTheseEnemies": 10,
+          "speed": 50,
+          "health": 50,
+          "reward": 200,
+          "damage": 50,
+          "colorName": "orange"
+        }
+      ]
+    },
+    {
+      "waveReward": 1000,
+      "Enemies": [
+        {
+          "numberOfTheseEnemies": 20,
+          "speed": 50,
+          "health": 20,
+          "reward": 100,
+          "damage": 10,
+          "colorName": "green"
+        },
+        {
+          "numberOfTheseEnemies": 10,
+          "speed": 50,
+          "health": 50,
+          "reward": 200,
+          "damage": 50,
+          "colorName": "orange"
+        }
+      ]
+    },
+    {
+      "waveReward": 0,
+      "Enemies": [
+        {
+          "numberOfTheseEnemies": 10,
+          "speed": 50,
+          "health": 100,
+          "reward": 500,
+          "damage": 100,
           "colorName": "red"
         }
       ]

@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 public class Bomber
 {
     public Rectangle rectangle;
-    public Rectangle rangeRec; // Debug
     int id;
     int range = 300;
     int bombSpeed = 10;
@@ -26,7 +25,6 @@ public class Bomber
     public Bomber(Form1 form, int i, int x, int y)
     {
         rectangle = new Rectangle(x, y, 50, 50);
-        rangeRec = new Rectangle(x - range + 25, y - range + 25, range * 2, range * 2); // DEBUG
         range *= range;
         id = i;
         this.x = x;

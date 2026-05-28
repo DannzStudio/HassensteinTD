@@ -2,6 +2,7 @@
 using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace HassensteinTD
 {
@@ -39,12 +40,13 @@ namespace HassensteinTD
         private void Form1_Load(object sender, EventArgs e)
         {
             initMenu();
-            //initLevel();
-
-            //loadLevel("Levels/level1.json");
+            loadGame();
         }
 
-        Font arialFont = new Font("Arial", 14, FontStyle.Bold);
+        private Font arialFont(int size, bool bold)
+        {
+            return new Font("Arial", size, bold ? FontStyle.Bold : FontStyle.Regular);
+        }
 
 
 
@@ -53,6 +55,10 @@ namespace HassensteinTD
             mainDisplay.Enabled = true;
             mainDisplay.BringToFront();
             mainDisplay.Visible = true;
+            menuDisplay.SendToBack();
+            menuDisplay.Enabled = false;
+            menuDisplay.Location = new Point(1000, 1000);
+
             int canvasWidth = 950;
             int buttonWidth = 100;
             int buttonCount = 4;
@@ -70,7 +76,8 @@ namespace HassensteinTD
             // Level manager
             levelManager = new LevelManager(this);
 
-            menuDisplay.SendToBack();
+            // Waves
+            startWaveBtn.Enabled = true;
         }
 
         //------------------------------- Level Manager ----------------------------
@@ -82,6 +89,8 @@ namespace HassensteinTD
 
         bool levelLoaded = false;
 
+        int currentLevelID = 0;
+
         int numberOfWaves = 0;
         int currentWave;
         int gold = 0;
@@ -90,12 +99,22 @@ namespace HassensteinTD
         {
             menuDisplay.Location = new Point(1000, 1000);
             menuDisplay.Enabled = false;
+
             levelManager.LoadLevel(filePath);
             currentLevelData = levelManager.CurrentLevel;
+
             numberOfWaves = currentLevelData.Waves.Count;
             gold = currentLevelData.startingGold;
             lives = currentLevelData.lives;
             currentWave = 0;
+            currentLevelID = levelManager.CurrentLevel.levelID;
+
+            totalDamageDealt = 0;
+            totalEnemiesKilled = 0;
+            totalEnemiesKilled = 0;
+            towersPlaced = 0;
+            currentScore = 0;
+
             if (currentLevelData != null)
             {
                 preRenderLevelMap();
@@ -262,6 +281,11 @@ namespace HassensteinTD
             }
         }
 
+        private int calculateScore()
+        {
+            return (int)(totalDamageDealt * 0.2 + gold * 0.2 + lives - towersPlaced * 10);
+        }
+
         Rectangle backgroundTowerSelRec;
         Image backgroundTowerSel = Image.FromFile("Images/TowerSelBackground.png");
 
@@ -306,8 +330,8 @@ namespace HassensteinTD
         {
             // Initializing variables
             int waveReward = currentLevelData.Waves[waveIndex].waveReward;
-            int startX = currentLevelData.startPosX;
-            int startY = currentLevelData.startPosY;
+            int startX = currentLevelData.startPosX * 50;
+            int startY = currentLevelData.startPosY * 50;
 
             numberOfEnemiesInCurrentWave = currentLevelData.Waves[waveIndex].Enemies.Count;
 
@@ -327,6 +351,15 @@ namespace HassensteinTD
             waveSpawning = true;
             waveInProgress = true;
             currentWave++;
+        }
+
+        private void startWaveBtn_Click(object sender, EventArgs e)
+        {
+            if (currentWave != numberOfWaves)
+            {
+                startWave(currentWave);
+                startWaveBtn.Enabled = false;
+            }
         }
 
         //------------------------------- Enemy Logic ------------------------------
@@ -364,6 +397,12 @@ namespace HassensteinTD
                 removeEnemiesBellowHealth(enemy);
                 enemyReachedEnd(enemy);
             }
+
+            if (enemies.Count == 0 && !waveSpawning && waveInProgress && lives > 0) // Wave is finished
+            {
+                waveInProgress = false;
+                waveCompleted();
+            }
         }
 
         private void removeEnemiesBellowHealth(Enemy enemy)
@@ -382,6 +421,11 @@ namespace HassensteinTD
             {
                 lives -= enemy.damage;
                 enemies.Remove(enemy);
+
+                if (lives <= 0)
+                {
+                    gameOver();
+                }
             }
         }
 
@@ -423,13 +467,6 @@ namespace HassensteinTD
             return tintedImage;
         }
 
-        private void Form1_KeyDown(object sender, KeyEventArgs e) // Debug: Spawn enemy on spacebar press
-        {
-            if (e.KeyCode == Keys.L) // Debug: Load level on L press
-            {
-                if (currentWave != numberOfWaves) startWave(currentWave);
-            }
-        }
 
         //------------------------------- Drag and Drop Logic ------------------------------
 
@@ -437,7 +474,12 @@ namespace HassensteinTD
         Rectangle hedgehogUIRec;
         Rectangle trapperUIRec;
         Rectangle bomberUIRec;
-        Brush towerBrush = new SolidBrush(Color.Blue);
+
+        Image archerUIImg = Image.FromFile("Images/ArcherBTN.png");
+        Image hedgehogUIImg = Image.FromFile("Images/HedgehogBTN.png");
+        Image trapperUIImg = Image.FromFile("Images/TrapperBTN.png");
+        Image bomberUIImg = Image.FromFile("Images/BomberBTN.png");
+
         Brush pickedTowerBrush = new SolidBrush(Color.FromArgb(128, 255, 0, 0));
 
         Rectangle towerRec;
@@ -457,14 +499,10 @@ namespace HassensteinTD
 
         private void renderDragAndDrop(Graphics g)
         {
-            g.FillRectangle(towerBrush, archerUIRec);
-            g.DrawString("Archer", arialFont, Brushes.White, archerUIRec.X, archerUIRec.Y + 50);
-            g.FillRectangle(towerBrush, hedgehogUIRec);
-            g.DrawString("Hedgehog", arialFont, Brushes.White, hedgehogUIRec.X, archerUIRec.Y + 50);
-            g.FillRectangle(towerBrush, trapperUIRec);
-            g.DrawString("Trapper", arialFont, Brushes.White, trapperUIRec.X, archerUIRec.Y + 50);
-            g.FillRectangle(towerBrush, bomberUIRec);
-            g.DrawString("Bomber", arialFont, Brushes.White, bomberUIRec.X, archerUIRec.Y + 50);
+            g.DrawImage(archerUIImg, archerUIRec);
+            g.DrawImage(hedgehogUIImg, hedgehogUIRec);
+            g.DrawImage(trapperUIImg, trapperUIRec);
+            g.DrawImage(bomberUIImg, bomberUIRec);
 
             // Drawing dragging
             if (isDragging)
@@ -564,20 +602,32 @@ namespace HassensteinTD
                     switch (draggingID)
                     {
                         case 1:
+                            if (gold < 300) break;
+                            gold -= 300;
                             archers.Add(new Archer(this, archerCount++, towerRec.X, towerRec.Y));
                             logicalMap[gridX, gridY].isBuildable = false;
+                            towersPlaced++;
                             break;
                         case 2:
+                            if (gold < 1000) break;
+                            gold -= 1000;
                             hedgehogs.Add(new Hedgehog(this, hedgehogCount++, towerRec.X, towerRec.Y));
                             logicalMap[gridX, gridY].isBuildable = false;
+                            towersPlaced++;
                             break;
                         case 3:
+                            if (gold < 1500) break;
+                            gold -= 1500;
                             trappers.Add(new Trapper(this, trapperCount++, towerRec.X, towerRec.Y));
                             logicalMap[gridX, gridY].isBuildable = false;
+                            towersPlaced++;
                             break;
                         case 4:
+                            if (gold < 3000) break;
+                            gold -= 3000;
                             bombers.Add(new Bomber(this, bomberCount++, towerRec.X, towerRec.Y));
                             logicalMap[gridX, gridY].isBuildable = false;
+                            towersPlaced++;
                             break;
                     }
                 }
@@ -638,7 +688,7 @@ namespace HassensteinTD
         {
             foreach (Spike spike in spikes)
             {
-                g.DrawString(spike.numOfSpikes.ToString(), arialFont, Brushes.Red, spike.rectangle.X, spike.rectangle.Y); // DEBUG
+                g.DrawString(spike.numOfSpikes.ToString(), arialFont(12, true), Brushes.Red, spike.rectangle.X, spike.rectangle.Y); // DEBUG
             }
         }
 
@@ -869,14 +919,21 @@ namespace HassensteinTD
         Rectangle logo;
         Rectangle playButton;
 
+        Image logoImg;
+        Image playBtnImg;
+
         private void initMenu()
         {
             gameState = 0;
+            menuDisplay.Enabled = true;
             menuDisplay.Visible = true;
             menuDisplay.Location = new Point(0, 0);
             menuDisplay.BringToFront();
 
-            mainDisplay.Visible = false;
+            mainDisplay.Enabled = false;
+
+            if (logoImg == null) logoImg = Image.FromFile("Images/Logo.png");
+            if (playBtnImg == null) playBtnImg = Image.FromFile("Images/PlayBTN.png");
 
             logo = new Rectangle(0, 0, 970, 817);
             playButton = new Rectangle(320, 430, 331, 124);
@@ -889,38 +946,41 @@ namespace HassensteinTD
         Rectangle level2Button;
         Rectangle level3Button;
 
+        Image level1Image = Image.FromFile("Images/Level1.png");
+        Image level2Image = Image.FromFile("Images/Level2.png");
+        Image level3Image = Image.FromFile("Images/Level3.png");
+
         private void initLevelSelector()
         {
             gameState = 1;
+            menuDisplay.Enabled = true;
             menuDisplay.Visible = true;
             menuDisplay.Location = new Point(0, 0);
             menuDisplay.BringToFront();
 
-            mainDisplay.Visible = false;
+            mainDisplay.Enabled = false;
 
-            level1Button = new Rectangle(125, 400,200,200);
-            level2Button = new Rectangle(375, 400,200,200);
-            level3Button = new Rectangle(625, 400,200,200);
+            level1Button = new Rectangle(125, 400, 200, 200);
+            level2Button = new Rectangle(375, 400, 200, 200);
+            level3Button = new Rectangle(625, 400, 200, 200);
         }
 
         private void renderMenu(Graphics g)
         {
-            using(Image menuBackground = Image.FromFile("Images/Logo.png"))
-            using(Image playButtonIMG = Image.FromFile("Images/PlayBTN.png"))
-            {
-                g.DrawImage(menuBackground, logo);
-                g.DrawImage(playButtonIMG, playButton);
-            } 
+            g.DrawImage(logoImg, logo);
+            g.DrawImage(playBtnImg, playButton);
         }
 
         private void renderLevelSelector(Graphics g)
         {
-            using (Image menuBackground = Image.FromFile("Images/Logo.png"))
-                g.DrawImage(menuBackground, logo);
-            g.DrawString("Select Level", new Font("Arial", 50), Brushes.White, 300, 250);
-            g.FillRectangle(Brushes.Blue, level1Button);
-            g.FillRectangle(Brushes.Blue, level2Button);
-            g.FillRectangle(Brushes.Blue, level3Button);
+            g.DrawImage(logoImg, logo);
+            g.DrawString("Select Level", arialFont(50, true), Brushes.White, 300, 250);
+            g.DrawImage(level1Image, level1Button);
+            g.DrawString($"Score: {score[0]}", arialFont(12, true), Brushes.White, 125, 610);
+            g.DrawImage(level2Image, level2Button);
+            g.DrawString($"Score: {score[1]}", arialFont(12, true), Brushes.White, 375, 610);
+            g.DrawImage(level3Image, level3Button);
+            g.DrawString($"Score: {score[2]}", arialFont(12, true), Brushes.White, 625, 610);
         }
 
         private void updateStats()
@@ -932,32 +992,70 @@ namespace HassensteinTD
 
         int totalDamageDealt = 0;
         int totalEnemiesKilled = 0;
+        int towersPlaced = 0;
+
+        int[] score = [0, 0, 0];
+        int currentScore = 0;
 
         private void gameOver()
         {
+            // Reseting level
+            arrows.Clear();
+            bombs.Clear();
+            explosions.Clear();
+            archers.Clear();
+            hedgehogs.Clear();
+            bombers.Clear();
+            trappers.Clear();
+            enemies.Clear();
 
-        }
-        private void renderGameOver(Graphics g)
-        {
-
+            MessageBox.Show($"Hassenstein has fallen! \nTotal damage dealt: {totalDamageDealt} \nTotal enemies killed: {totalEnemiesKilled} \nTowers placed: {towersPlaced}", "Game Over!");
+            initLevelSelector();
+            gameState = 1;
         }
 
         private void waveCompleted()
         {
+            if (currentWave == numberOfWaves)
+            {
+                victory();
+                return;
+            }
 
-        }
-        private void renderWaveCompleted(Graphics g)
-        {
+            gold += currentLevelData.Waves[currentWave - 1].waveReward; // Reward for completing the wave
 
+            // Reseting level
+            arrows.Clear();
+            bombs.Clear();
+            explosions.Clear();
+
+            MessageBox.Show($"You have defeated this wave of Enemies!\nReward:{currentLevelData.Waves[currentWave - 1].waveReward}", "Wave defeated!");
+
+            startWaveBtn.Enabled = true;
         }
 
         private void victory()
         {
+            // Reseting level
+            arrows.Clear();
+            bombs.Clear();
+            explosions.Clear();
+            spikes.Clear();
+            archers.Clear();
+            hedgehogs.Clear();
+            bombers.Clear();
+            trappers.Clear();
 
-        }
-        private void renderVictory(Graphics g)
-        {
+            currentScore = calculateScore();
+            if(currentScore > score[currentLevelID])
+            {
+                score[currentLevelID] = currentScore;
+                saveGame();
+            }
 
+            MessageBox.Show($"You defended Hassenstein! \nTotal damage dealt: {totalDamageDealt} \nTotal enemies killed: {totalEnemiesKilled} \nTowers placed: {towersPlaced} \nScore:{currentScore}", "Victory!");
+            initLevelSelector();
+            gameState = 1;
         }
 
         private void menuDisplay_Paint(object sender, PaintEventArgs e)
@@ -965,7 +1063,7 @@ namespace HassensteinTD
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            switch(gameState)
+            switch (gameState)
             {
                 case 0:
                     renderMenu(g);
@@ -982,24 +1080,30 @@ namespace HassensteinTD
             int cursorY = e.Y;
 
             // Menu animations
-            if (playButton.Contains(cursorX, cursorY))
-                playButton = new Rectangle(320, 410, 331, 124);
-            else
-                playButton = new Rectangle(320, 430, 331, 124);
+            if (gameState == 0)
+            {
+                if (playButton.Contains(cursorX, cursorY))
+                    playButton = new Rectangle(320, 410, 331, 124);
+                else
+                    playButton = new Rectangle(320, 430, 331, 124);
+            }
 
             // Level selector animations
-            if (level1Button.Contains(cursorX, cursorY))
-                level1Button = new Rectangle(125, 380, 200, 200);
-            else
-                level1Button = new Rectangle(125, 400, 200, 200);
-            if (level2Button.Contains(cursorX, cursorY))
-                level2Button = new Rectangle(375, 380, 200, 200);
-            else
-                level2Button = new Rectangle(375, 400, 200, 200);
-            if (level3Button.Contains(cursorX, cursorY))
-                level3Button = new Rectangle(625, 380, 200, 200);
-            else
-                level3Button = new Rectangle(625, 400, 200, 200);
+            if (gameState == 1)
+            {
+                if (level1Button.Contains(cursorX, cursorY))
+                    level1Button = new Rectangle(125, 380, 200, 200);
+                else
+                    level1Button = new Rectangle(125, 400, 200, 200);
+                if (level2Button.Contains(cursorX, cursorY))
+                    level2Button = new Rectangle(375, 380, 200, 200);
+                else
+                    level2Button = new Rectangle(375, 400, 200, 200);
+                if (level3Button.Contains(cursorX, cursorY))
+                    level3Button = new Rectangle(625, 380, 200, 200);
+                else
+                    level3Button = new Rectangle(625, 400, 200, 200);
+            }
 
             menuDisplay.Refresh();
         }
@@ -1019,12 +1123,14 @@ namespace HassensteinTD
                 }
                 else if (level2Button.Contains(cursorX, cursorY))
                 {
-                    //loadLevel(2);
+                    initLevel();
+                    loadLevel("Levels/level2.json");
                     gameState = 2;
                 }
                 else if (level3Button.Contains(cursorX, cursorY))
                 {
-                    //loadLevel(3);
+                    initLevel();
+                    loadLevel("Levels/level3.json");
                     gameState = 2;
                 }
             }
@@ -1034,8 +1140,32 @@ namespace HassensteinTD
                 gameState = 1;
             }
 
-            
+
             menuDisplay.Refresh();
+        }
+
+        //------------------------------- Saving Logic ------------------------------
+        private void saveGame()
+        {
+            string[] data = new string[3];
+            for(int i = 0; i < score.Length; i++)
+            {
+                data[i] = score[i].ToString();
+            }
+
+            File.WriteAllLines("Saves/save.txt", data);
+        }
+
+        private void loadGame()
+        {
+            if (File.Exists("Saves/save.txt"))
+            {
+                string[] scores = File.ReadAllLines("Saves/save.txt");
+                for (int i = 0; i < scores.Length; i++)
+                {
+                    score[i] = int.Parse(scores[i]);
+                }
+            }
         }
     }
 }

@@ -22,6 +22,7 @@ public class LevelManager
 
     public class LevelData
     {
+        public int levelID { get; set; }
         public int startingGold { get; set; }
         public int lives { get; set; }
         public string[] levelLayout { get; set; }

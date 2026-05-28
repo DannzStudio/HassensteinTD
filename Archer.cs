@@ -8,11 +8,10 @@ using System.Threading.Tasks;
 
 // Shoots arrows at nearest enemies
 // has a long range and high damage, but a medium attack speed (1000).
-// Cost: 200
+// Cost: 300
 public class Archer
 {
     public Rectangle rectangle;
-    public Rectangle rangeRec; // Debug
     int id;
     int range = 300;
     int arrowSpeed = 10;
@@ -24,7 +23,6 @@ public class Archer
     public Archer(Form1 form, int i, int x, int y)
     {      
         rectangle = new Rectangle(x, y, 50, 50);
-        rangeRec = new Rectangle(x - range + 25, y - range + 25, range * 2, range * 2); // DEBUG
         range *= range;
         id = i;
         this.x = x;
