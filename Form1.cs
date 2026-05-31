@@ -163,48 +163,42 @@ namespace HassensteinTD
 
             using (Graphics g = Graphics.FromImage(mapImage)) // Drawing the level map to bitmap
             {
-                using (Brush grassBrush = new SolidBrush(Color.LightGreen)) // memory leak prevention
-                using (Brush pathBrush = new SolidBrush(Color.SandyBrown))
-                using (Brush endBrush = new SolidBrush(Color.DarkGray))
+                for (int y = 0; y < height; y++) // Pre-rendering map image for better performance
                 {
-                    for (int y = 0; y < height; y++) // Pre-rendering map image for better performance
+                    for (int x = 0; x < width; x++)
                     {
-                        for (int x = 0; x < width; x++)
+                        char tile = layout[y][x];
+                        Rectangle rect = new Rectangle(x * gridSize, y * gridSize, gridSize, gridSize);
+
+                        // Logical map
+                        bool isPath = false;
+                        bool isBuildable = false;
+                        bool isEnd = false;
+
+                        if (tile == '.')
                         {
-                            char tile = layout[y][x];
-                            Rectangle rect = new Rectangle(x * gridSize, y * gridSize, gridSize, gridSize);
-
-                            // Logical map
-                            bool isPath = false;
-                            bool isBuildable = false;
-                            bool isEnd = false;
-
-                            if (tile == '.')
-                            {
-                                g.DrawImage(Image.FromFile("Images/Grass.png"), rect); // Grass
-                                isBuildable = true;
-                            }
-                            else if (tile == '#')
-                            {
-                                g.DrawImage(Image.FromFile("Images/Path.png"), rect); // Path
-                                isPath = true;
-                            }
-                            else if (tile == '*')
-                            {
-                                g.FillRectangle(endBrush, rect); // End
-                                isPath = true;
-                                isEnd = true;
-                                endPoint = new Tile(x, y, true, false, true);
-                            }
-
-                            logicalMap[x, y] = new Tile(x, y, isPath, isBuildable, isEnd);
+                            g.DrawImage(Image.FromFile("Images/Grass.png"), rect); // Grass
+                            isBuildable = true;
                         }
+                        else if (tile == '#')
+                        {
+                            g.DrawImage(Image.FromFile("Images/Path.png"), rect); // Path
+                            isPath = true;
+                        }
+                        else if (tile == '*')
+                        {
+                            g.FillRectangle(Brushes.Gray, rect); // End
+                            isPath = true;
+                            isEnd = true;
+                            endPoint = new Tile(x, y, true, false, true);
+                        }
+
+                        logicalMap[x, y] = new Tile(x, y, isPath, isBuildable, isEnd);
                     }
-
-                    Rectangle castleRec = new Rectangle(900, 0, 50, 650);
-                    g.DrawImage(Image.FromFile("Images/Castle.png"), castleRec);
-
                 }
+
+                Rectangle castleRec = new Rectangle(900, 0, 50, 650);
+                g.DrawImage(Image.FromFile("Images/Castle.png"), castleRec);
             }
 
             generateEnemyMoveSet();
@@ -237,7 +231,9 @@ namespace HassensteinTD
                 int direction = -1;
 
                 // Right
-                if (currentX + 1 < wth && logicalMap[currentX + 1, currentY].isPath && (currentX + 1 != lastX || currentY != lastY))
+                if (currentX + 1 < wth 
+                    && logicalMap[currentX + 1, currentY].isPath 
+                    && (currentX + 1 != lastX || currentY != lastY))
                 {
                     nextX = currentX + 1;
                     nextY = currentY;
@@ -439,13 +435,13 @@ namespace HassensteinTD
 
         public Image TintImage(Image originalImage, Color tintColor)
         {
-            Image tintedImage = new Bitmap(originalImage.Width, originalImage.Height); // Create new image
+            Image tintedImage = new Bitmap(originalImage.Width, originalImage.Height); 
 
             float r = tintColor.R / 255f;
             float g = tintColor.G / 255f;
             float b = tintColor.B / 255f;
 
-            // Create multiplicative color matrix to apply the tint color to the original image
+            // Create multiplicative color matrix to apply the tint color
             ColorMatrix colorMatrix = new ColorMatrix(new float[][]
             {
                 new float[] {r, 0, 0, 0, 0}, // R
@@ -461,7 +457,10 @@ namespace HassensteinTD
             // Generate tinted version of the original image
             using (Graphics gr = Graphics.FromImage(tintedImage))
             {
-                gr.DrawImage(originalImage, new Rectangle(0, 0, tintedImage.Width, tintedImage.Height), 0, 0, originalImage.Width, originalImage.Height, GraphicsUnit.Pixel, attributes);
+                gr.DrawImage(originalImage, new Rectangle(0, 0, tintedImage.Width,
+                            tintedImage.Height), 
+                            0, 0, originalImage.Width, originalImage.Height, 
+                            GraphicsUnit.Pixel, attributes);
             }
 
             return tintedImage;
@@ -526,28 +525,19 @@ namespace HassensteinTD
                     towerRec = new Rectangle(cursorX - towerRec.Width / 2, cursorY - towerRec.Height / 2, 50, 50); // Set towerRec to the clicked tower's position
                     draggingID = 1; // Set draggingID to Archer
                 }
-            }
-            if (e.Button == MouseButtons.Left)
-            {
-                if (hedgehogUIRec.Contains(cursorX, cursorY))
+                else if (hedgehogUIRec.Contains(cursorX, cursorY))
                 {
                     isDragging = true;
                     towerRec = new Rectangle(cursorX - towerRec.Width / 2, cursorY - towerRec.Height / 2, 50, 50);
                     draggingID = 2; // Set draggingID to Hedgehog
                 }
-            }
-            if (e.Button == MouseButtons.Left)
-            {
-                if (trapperUIRec.Contains(cursorX, cursorY))
+                else if (trapperUIRec.Contains(cursorX, cursorY))
                 {
                     isDragging = true;
                     towerRec = new Rectangle(cursorX - towerRec.Width / 2, cursorY - towerRec.Height / 2, 50, 50);
                     draggingID = 3; // Set draggingID to Trapper
                 }
-            }
-            if (e.Button == MouseButtons.Left)
-            {
-                if (bomberUIRec.Contains(cursorX, cursorY))
+                else if (bomberUIRec.Contains(cursorX, cursorY))
                 {
                     isDragging = true;
                     towerRec = new Rectangle(cursorX - towerRec.Width / 2, cursorY - towerRec.Height / 2, 50, 50);
